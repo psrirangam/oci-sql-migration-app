@@ -1,12 +1,19 @@
 // Assessment Logic and Recommendation Engine for OCI SQL Server Migration
 // Based on SQL Server 2022 Licensing Guide and October 1, 2019 Licensing Changes
+// Note: OCI only supports IaaS deployments (BYOL or License Included from Marketplace)
 
 export interface AssessmentAnswers {
+  // Customer Information
+  customerName?: string;
+  customerEmail?: string;
+  numInstances?: number;
+  
   // Current State
   currentlyRunning: string;
   currentVersion?: string;
   currentEdition?: string;
   currentDeployment?: string;
+  currentDeploymentType?: string; // PaaS or IaaS for cloud deployments
   licensePurchaseDate?: string;
   currentLicensingModel?: string;
   softwareAssurance?: string;
@@ -61,6 +68,31 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
   // Check if license was purchased before October 1, 2019 (grandfathered)
   const isGrandfathered = answers.licensePurchaseDate === "before-oct-2019";
   const hasSA = answers.softwareAssurance === "yes";
+  
+  // Check current deployment type
+  const currentIsPaaS = answers.currentDeploymentType === "paas";
+
+  // Check if customer wants PaaS on OCI
+  if (isOCI && currentIsPaaS) {
+    recommendation.deploymentModel = "Managed Database Service (PaaS) - Contact Oracle Managed Services Partner";
+    recommendation.licensingOption = "Managed Services Partner Engagement";
+    recommendation.licensingDetails = "OCI does not offer native PaaS SQL Server services. However, Oracle has partnerships with managed services providers who can deliver PaaS-like SQL Server experiences on OCI infrastructure. Please contact our managed services partner for a customized solution.";
+    recommendation.architecture = "Custom PaaS architecture managed by Oracle partner";
+    recommendation.costConsiderations = "Pricing depends on the managed services partner's offering and SLA requirements.";
+    recommendation.keyBenefits.push("Fully managed SQL Server experience");
+    recommendation.keyBenefits.push("Reduced operational overhead");
+    recommendation.keyBenefits.push("Professional support and SLAs");
+    recommendation.nextSteps.push("Contact Oracle Managed Services Partner: Pavan.srirangam@oracle.com");
+    recommendation.nextSteps.push("Discuss PaaS requirements and custom solution options");
+    recommendation.complianceNotes = "PaaS solutions are delivered through Oracle's managed services partners. Licensing and support terms will be defined in partnership agreements.";
+    
+    const summary = generateSummary(answers, recommendation);
+    return {
+      recommendation,
+      summary,
+      estimatedComplexity: "High",
+    };
+  }
 
   // Determine deployment model based on edition and HA/DR requirements
   if (answers.targetEdition === "enterprise") {
@@ -97,6 +129,9 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
   // Determine licensing option based on October 1, 2019 rules
   if (isOCI) {
     // OCI is NOT a Listed Provider - can use BYOL without SA
+    // OCI only supports IaaS (no PaaS option)
+    recommendation.nextSteps.push("Note: OCI offers only IaaS deployment options (SQL Server on VMs)");
+    
     if (isUpgrading && isNewVersion) {
       // Upgrading to new version requires SA or other option
       if (hasSA) {
@@ -106,11 +141,11 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
         recommendation.keyBenefits.push("License Mobility enables flexible deployment");
         recommendation.costConsiderations = "Cost includes SA maintenance + OCI infrastructure. Most cost-effective if you have active SA.";
       } else {
-        recommendation.licensingOption = "License Included (OCI Marketplace) or Purchase SA";
-        recommendation.licensingDetails = "For SQL Server 2022, you have two options: (1) Purchase License Included from OCI Marketplace (includes licensing and support), or (2) Purchase Software Assurance to enable BYOL with License Mobility.";
+        recommendation.licensingOption = "License Included (OCI Marketplace)";
+        recommendation.licensingDetails = "For SQL Server 2022, purchase License Included from OCI Marketplace. This includes licensing, support, and infrastructure in one package.";
         recommendation.keyBenefits.push("Simplified licensing and compliance");
         recommendation.keyBenefits.push("Included support from Oracle and Microsoft");
-        recommendation.costConsiderations = "License Included option has higher per-hour cost but simplifies management. Alternatively, purchase SA to enable BYOL.";
+        recommendation.costConsiderations = "License Included option has higher per-hour cost but simplifies management.";
         recommendation.complianceNotes = "";
       }
     } else {
@@ -163,15 +198,15 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
         recommendation.costConsiderations = "Cost includes SA maintenance + cloud infrastructure.";
         recommendation.complianceNotes = "";
       }
-      } else {
-        const cloudName = answers.targetCloud ? answers.targetCloud.toUpperCase() : "cloud provider";
-        recommendation.licensingOption = "SPLA or License Included from Cloud Provider";
-        recommendation.licensingDetails = "Without Software Assurance, you must use either: (1) Services Provider License Agreement (SPLA) with a licensed provider, or (2) License-Included offerings from " + cloudName;
-        recommendation.keyBenefits.push("Simplified licensing compliance");
-        recommendation.keyBenefits.push("Pay-as-you-go model");
-        recommendation.costConsiderations = "Higher per-hour cost includes licensing. Consider purchasing SA if planning long-term deployment.";
-        recommendation.complianceNotes = "Cannot use BYOL without SA on Listed Providers for licenses purchased after October 1, 2019.";
-      }
+    } else {
+      const cloudName = answers.targetCloud ? answers.targetCloud.toUpperCase() : "cloud provider";
+      recommendation.licensingOption = "SPLA or License Included from Cloud Provider";
+      recommendation.licensingDetails = "Without Software Assurance, you must use either: (1) Services Provider License Agreement (SPLA) with a licensed provider, or (2) License-Included offerings from " + cloudName;
+      recommendation.keyBenefits.push("Simplified licensing compliance");
+      recommendation.keyBenefits.push("Pay-as-you-go model");
+      recommendation.costConsiderations = "Higher per-hour cost includes licensing. Consider purchasing SA if planning long-term deployment.";
+      recommendation.complianceNotes = "Cannot use BYOL without SA on Listed Providers for licenses purchased after October 1, 2019.";
+    }
   }
 
   // Determine architecture based on HA/DR requirements
@@ -213,11 +248,21 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
     recommendation.nextSteps.push("Plan application re-architecture and data migration strategy");
   }
 
+  // Add migration context if coming from PaaS
+  if (currentIsPaaS && isOCI) {
+    recommendation.complianceNotes = (recommendation.complianceNotes || "") + " Note: You are migrating from a PaaS SQL Server service. OCI offers only IaaS options, which means you will manage SQL Server directly on VMs. This provides more control but requires more operational overhead.";
+  }
+
   // Determine complexity
   let complexity: "Low" | "Medium" | "High" = "Low";
   if (answers.hadrRequirements === "disaster-recovery") {
     complexity = "High";
   } else if (answers.hadrRequirements === "advanced-ha") {
+    complexity = "Medium";
+  }
+  
+  // Increase complexity if migrating from PaaS to IaaS
+  if (currentIsPaaS && isOCI && complexity === "Low") {
     complexity = "Medium";
   }
 
@@ -233,11 +278,127 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
 function generateSummary(answers: AssessmentAnswers, recommendation: Recommendation): string {
   const targetEdition = answers.targetEdition ? answers.targetEdition.charAt(0).toUpperCase() + answers.targetEdition.slice(1) : "Standard";
   const targetVersion = answers.targetVersion === "2022" ? "SQL Server 2022" : "SQL Server 2019";
+  const currentVersion = answers.currentVersion ? `SQL Server ${answers.currentVersion}` : "Unknown";
+  const currentEdition = answers.currentEdition ? answers.currentEdition.charAt(0).toUpperCase() + answers.currentEdition.slice(1) : "Unknown";
+  const hadrLabel = answers.hadrRequirements === "no-hadr" ? "No HA/DR" : (answers.hadrRequirements || "standard").replace(/-/g, " ").toUpperCase();
+  const migrationLabel = answers.migrationApproach === "lift-shift" ? "Lift and Shift" : answers.migrationApproach === "replatform" ? "Re-platform" : "Re-factor";
   
-  return `Based on your assessment, we recommend deploying ${targetVersion} ${targetEdition} Edition on ${recommendation.deploymentModel}. The ${recommendation.licensingOption} option provides the best balance of cost and flexibility for your scenario. Your ${answers.hadrRequirements === "no-hadr" ? "single-instance" : (answers.hadrRequirements || "standard").replace(/-/g, " ")} architecture will be supported by ${recommendation.architecture.split(" ").slice(0, 4).join(" ")}...`;
+  const summary = `
+## OCI SQL Server Migration Assessment Report
+
+**Customer Name:** ${answers.customerName || "Not provided"}
+**Number of SQL Server Instances to Migrate:** ${answers.numInstances || "Not specified"}
+
+---
+
+### Current State Assessment
+
+| Aspect | Details |
+|--------|---------|
+| **Current Version** | ${currentVersion} ${currentEdition} Edition |
+| **Current Deployment** | ${answers.currentDeployment || "Unknown"} |
+| **Deployment Type** | ${answers.currentDeploymentType === "paas" ? "PaaS (Managed Service)" : "IaaS (Virtual Machines)"} |
+| **License Purchase Date** | ${answers.licensePurchaseDate === "before-oct-2019" ? "Before October 1, 2019 (Grandfathered)" : answers.licensePurchaseDate === "after-oct-2019" ? "After October 1, 2019" : "Unknown"} |
+| **Current Licensing Model** | ${answers.currentLicensingModel === "per-core" ? "Per Core" : "Server + CAL"} |
+| **Software Assurance** | ${answers.softwareAssurance === "yes" ? "Active" : "Not Active"} |
+
+---
+
+### Target Deployment Plan
+
+| Aspect | Details |
+|--------|---------|
+| **Target Version** | ${targetVersion} |
+| **Target Edition** | ${targetEdition} Edition |
+| **Target Cloud** | OCI (Oracle Cloud Infrastructure) |
+| **HA/DR Requirements** | ${hadrLabel} |
+| **Migration Approach** | ${migrationLabel} |
+
+---
+
+### Recommended OCI Deployment Path
+
+**Deployment Model:** ${recommendation.deploymentModel}
+
+**Licensing Option:** ${recommendation.licensingOption}
+
+**Architecture:** ${recommendation.architecture}
+
+---
+
+### Key Benefits
+
+${recommendation.keyBenefits.map((benefit, idx) => `${idx + 1}. ${benefit}`).join("\n")}
+
+---
+
+### Cost Considerations
+
+${recommendation.costConsiderations}
+
+---
+
+### Licensing Details
+
+${recommendation.licensingDetails}
+
+---
+
+### Implementation Roadmap
+
+${recommendation.nextSteps.map((step, idx) => `${idx + 1}. ${step}`).join("\n")}
+
+---
+
+${recommendation.complianceNotes ? `### Compliance & Important Notes
+
+${recommendation.complianceNotes}
+
+---
+
+` : ""}
+
+### Next Steps
+
+1. **Review this assessment** with your IT and procurement teams
+2. **Contact Oracle Sales** for detailed pricing and licensing terms
+3. **Engage with Oracle Managed Services** if PaaS options are required
+4. **Plan migration timeline** based on your business requirements
+5. **Validate application compatibility** on OCI infrastructure
+
+---
+
+**Assessment Generated:** ${new Date().toLocaleDateString()}
+**For Questions:** Contact your Oracle Sales Representative
+  `.trim();
+  
+  return summary;
 }
 
 export const QUESTIONS = [
+  // Customer Information Section
+  {
+    id: "customerName",
+    category: "Customer Information",
+    question: "What is your name or company name?",
+    type: "text",
+    options: [],
+  },
+  {
+    id: "customerEmail",
+    category: "Customer Information",
+    question: "What is your email address? (We will use this to reach back with recommendations)",
+    type: "email",
+    options: [],
+  },
+  {
+    id: "numInstances",
+    category: "Customer Information",
+    question: "How many SQL Server instances are you planning to migrate to OCI?",
+    type: "number",
+    options: [],
+  },
+
   // Current State Section
   {
     id: "currentlyRunning",
@@ -292,6 +453,17 @@ export const QUESTIONS = [
       { value: "gcp", label: "Google Cloud Platform (GCP)" },
       { value: "oci", label: "Oracle Cloud Infrastructure (OCI)" },
       { value: "other", label: "Other cloud provider" },
+    ],
+  },
+  {
+    id: "currentDeploymentType",
+    category: "Current State",
+    question: "Is your current SQL Server deployed as PaaS or IaaS?",
+    type: "radio",
+    conditional: { field: "currentDeployment", value: "cloud-deployment" },
+    options: [
+      { value: "iaas", label: "IaaS (Virtual Machines - SQL Server on VMs)" },
+      { value: "paas", label: "PaaS (Managed Database Service - Azure SQL Database, AWS RDS, Google Cloud SQL, etc.)" },
     ],
   },
   {

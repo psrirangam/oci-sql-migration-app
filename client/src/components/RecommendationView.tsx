@@ -1,16 +1,27 @@
 import { useAssessmentContext } from "@/contexts/AssessmentContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertCircle, Zap, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, AlertCircle, Zap, Target, Download } from "lucide-react";
+import { useEffect } from "react";
+import { convertAssessmentToRecord, saveRecordToLocalStorage, downloadAllRecords } from "@/lib/csvExport";
 
 export default function RecommendationView() {
-  const { result } = useAssessmentContext();
+  const { result, answers } = useAssessmentContext();
 
   if (!result) {
     return null;
   }
 
   const { recommendation, summary, estimatedComplexity } = result;
+
+  // Save assessment record to localStorage when result is generated
+  useEffect(() => {
+    if (result && answers) {
+      const record = convertAssessmentToRecord(answers as any, recommendation);
+      saveRecordToLocalStorage(record);
+    }
+  }, [result, answers, recommendation]);
 
   const complexityColor = {
     Low: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -30,7 +41,11 @@ export default function RecommendationView() {
           <CardDescription>Based on your SQL Server 2022 licensing assessment</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground leading-relaxed">{summary}</p>
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs whitespace-pre-wrap break-words">
+              {summary}
+            </pre>
+          </div>
         </CardContent>
       </Card>
 
@@ -145,6 +160,32 @@ export default function RecommendationView() {
               </li>
             ))}
           </ol>
+        </CardContent>
+      </Card>
+
+      {/* Export Data Section */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Download className="w-5 h-5" />
+            Export Assessment Data
+          </CardTitle>
+          <CardDescription>
+            Download all captured assessment records as CSV for analysis and follow-up
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={downloadAllRecords}
+            className="w-full md:w-auto"
+            variant="default"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download All Assessments (CSV)
+          </Button>
+          <p className="text-xs text-muted-foreground mt-3">
+            This will download all customer assessments including names, emails, and recommendations for your records.
+          </p>
         </CardContent>
       </Card>
 

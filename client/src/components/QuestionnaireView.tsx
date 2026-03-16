@@ -30,6 +30,8 @@ export default function QuestionnaireView() {
   const questionId = currentQuestion.id;
   const currentAnswer = answers[questionId as keyof typeof answers];
   const isNumberInput = currentQuestion.type === "number";
+  const isTextInput = currentQuestion.type === "text";
+  const isEmailInput = currentQuestion.type === "email";
 
   const handleInputChange = (value: string) => {
     if (isNumberInput) {
@@ -80,6 +82,16 @@ export default function QuestionnaireView() {
               Enter a numeric value for this field
             </CardDescription>
           )}
+          {currentQuestion.type === "email" && (
+            <CardDescription>
+              We will use this email to reach back with your assessment results
+            </CardDescription>
+          )}
+          {currentQuestion.type === "text" && (
+            <CardDescription>
+              Please provide your response
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           {currentQuestion.type === "radio" && currentQuestion.options ? (
@@ -104,6 +116,14 @@ export default function QuestionnaireView() {
                 ))}
               </div>
             </RadioGroup>
+          ) : (isTextInput || isEmailInput || isNumberInput) ? (
+            <Input
+              type={isEmailInput ? "email" : isNumberInput ? "number" : "text"}
+              placeholder={isEmailInput ? "your.email@company.com" : isNumberInput ? "Enter a number" : "Enter your response"}
+              value={String(currentAnswer || "")}
+              onChange={(e) => handleInputChange(e.target.value)}
+              className="text-base py-3"
+            />
           ) : null}
         </CardContent>
       </Card>
@@ -129,23 +149,22 @@ export default function QuestionnaireView() {
         >
           {isLastQuestion && canProceedToNext() ? (
             <>
-              Get Recommendations
+              <span>Generate Recommendation</span>
               <ChevronRight className="w-4 h-4" />
             </>
           ) : (
             <>
-              Next
+              <span>Next</span>
               <ChevronRight className="w-4 h-4" />
             </>
           )}
         </Button>
       </div>
 
-      {/* Help Text */}
-      <div className="mt-8 p-4 bg-secondary/30 rounded-lg border border-border">
-        <p className="text-xs text-muted-foreground">
-          💡 <strong>Tip:</strong> Your answers are based on the SQL Server 2022 Licensing Guide. 
-          Select options that best match your current or planned deployment scenario.
+      {/* Tip Section */}
+      <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          <strong>💡 Tip:</strong> Your answers are based on the SQL Server 2022 Licensing Guide. Select options that best match your current or planned deployment scenario.
         </p>
       </div>
     </div>

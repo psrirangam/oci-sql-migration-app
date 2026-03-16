@@ -45,10 +45,14 @@ export function useAssessment() {
   const handleSubmit = useCallback(() => {
     // Fill in default values for conditional questions that weren't asked
     const completeAnswers: AssessmentAnswers = {
+      customerName: (answers.customerName as string) || "Not provided",
+      customerEmail: (answers.customerEmail as string) || "Not provided",
+      numInstances: (answers.numInstances as number) || 0,
       currentlyRunning: (answers.currentlyRunning as string) || "no",
       currentVersion: (answers.currentVersion as string) || "2019",
       currentEdition: (answers.currentEdition as string) || "standard",
       currentDeployment: (answers.currentDeployment as string) || "on-premises",
+      currentDeploymentType: (answers.currentDeploymentType as string) || "iaas",
       licensePurchaseDate: (answers.licensePurchaseDate as string) || "unsure",
       currentLicensingModel: (answers.currentLicensingModel as string) || "per-core",
       softwareAssurance: (answers.softwareAssurance as string) || "no",
