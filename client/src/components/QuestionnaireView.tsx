@@ -5,9 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { isValidOracleEmail } from "@/lib/csvExport";
 
 export default function QuestionnaireView() {
+  const [emailError, setEmailError] = useState<string>("");
+  
   const {
     currentQuestion,
     currentQuestionIndex,
@@ -39,12 +43,28 @@ export default function QuestionnaireView() {
       if (!isNaN(numValue)) {
         handleAnswer(questionId, numValue);
       }
+    } else if (isEmailInput) {
+      // Validate Oracle email
+      if (value && !isValidOracleEmail(value)) {
+        setEmailError("Please use your Oracle.com email address");
+      } else {
+        setEmailError("");
+      }
+      handleAnswer(questionId, value);
     } else {
       handleAnswer(questionId, value);
     }
   };
 
   const handleNextClick = () => {
+    // Validate email before proceeding
+    if (isEmailInput && currentAnswer) {
+      if (!isValidOracleEmail(String(currentAnswer))) {
+        setEmailError("Please use your Oracle.com email address to proceed");
+        return;
+      }
+    }
+    
     if (isLastQuestion && canProceedToNext()) {
       handleSubmit();
     } else {
@@ -84,7 +104,7 @@ export default function QuestionnaireView() {
           )}
           {currentQuestion.type === "email" && (
             <CardDescription>
-              We will use this email to reach back with your assessment results
+              We will use this Oracle.com email to reach back with your assessment results
             </CardDescription>
           )}
           {currentQuestion.type === "text" && (
@@ -117,13 +137,21 @@ export default function QuestionnaireView() {
               </div>
             </RadioGroup>
           ) : (isTextInput || isEmailInput || isNumberInput) ? (
-            <Input
-              type={isEmailInput ? "email" : isNumberInput ? "number" : "text"}
-              placeholder={isEmailInput ? "your.email@company.com" : isNumberInput ? "Enter a number" : "Enter your response"}
-              value={String(currentAnswer || "")}
-              onChange={(e) => handleInputChange(e.target.value)}
-              className="text-base py-3"
-            />
+            <div className="space-y-3">
+              <Input
+                type={isEmailInput ? "email" : isNumberInput ? "number" : "text"}
+                placeholder={isEmailInput ? "your.name@oracle.com" : isNumberInput ? "Enter a number" : "Enter your response"}
+                value={String(currentAnswer || "")}
+                onChange={(e) => handleInputChange(e.target.value)}
+                className="text-base py-3"
+              />
+              {isEmailInput && emailError && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-600 dark:text-red-400">{emailError}</p>
+                </div>
+              )}
+            </div>
           ) : null}
         </CardContent>
       </Card>
@@ -143,7 +171,7 @@ export default function QuestionnaireView() {
 
         <Button
           onClick={() => handleNextClick()}
-          disabled={!canProceedToNext()}
+          disabled={!canProceedToNext() || (isEmailInput && emailError !== "")}
           size="lg"
           className="gap-2 bg-primary hover:bg-primary/90"
         >

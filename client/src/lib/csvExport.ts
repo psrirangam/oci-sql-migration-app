@@ -143,3 +143,8 @@ export function downloadAllRecords(): void {
   }
   downloadCSV(records);
 }
+
+export function isValidOracleEmail(email: string): boolean {
+  const oracleEmailRegex = /^[^@]+@oracle\.com$/i;
+  return oracleEmailRegex.test(email.trim());
+}
