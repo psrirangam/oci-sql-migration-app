@@ -104,20 +104,6 @@ export default function QuestionnaireView() {
                 ))}
               </div>
             </RadioGroup>
-          ) : currentQuestion.type === "number" ? (
-            <div className="space-y-3">
-              <Input
-                type="number"
-                placeholder={currentQuestion.placeholder}
-                value={currentAnswer || ""}
-                onChange={(e) => handleInputChange(e.target.value)}
-                className="text-lg py-3"
-                min="1"
-              />
-              <p className="text-xs text-muted-foreground">
-                {currentQuestion.placeholder}
-              </p>
-            </div>
           ) : null}
         </CardContent>
       </Card>

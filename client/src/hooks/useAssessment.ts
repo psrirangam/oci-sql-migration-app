@@ -45,14 +45,16 @@ export function useAssessment() {
   const handleSubmit = useCallback(() => {
     // Fill in default values for conditional questions that weren't asked
     const completeAnswers: AssessmentAnswers = {
-      edition: (answers.edition as string) || "standard",
-      licensingModel: (answers.licensingModel as string) || "per-core",
-      virtualization: (answers.virtualization as string) || "no",
-      virtualCoresPerVM: (answers.virtualCoresPerVM as number) || 8,
-      vmsPerHost: (answers.vmsPerHost as number) || 1,
+      currentlyRunning: (answers.currentlyRunning as string) || "no",
+      currentVersion: (answers.currentVersion as string) || "2019",
+      currentEdition: (answers.currentEdition as string) || "standard",
+      currentDeployment: (answers.currentDeployment as string) || "on-premises",
+      licensePurchaseDate: (answers.licensePurchaseDate as string) || "unsure",
+      currentLicensingModel: (answers.currentLicensingModel as string) || "per-core",
       softwareAssurance: (answers.softwareAssurance as string) || "no",
-      licenseMobility: (answers.licenseMobility as string) || "no",
-      haDrBenefit: (answers.haDrBenefit as string) || "no",
+      targetVersion: (answers.targetVersion as string) || "2022",
+      targetEdition: (answers.targetEdition as string) || "standard",
+      targetCloud: (answers.targetCloud as string) || "oci",
       hadrRequirements: (answers.hadrRequirements as string) || "no-hadr",
       migrationApproach: (answers.migrationApproach as string) || "lift-shift",
     };
@@ -69,8 +71,8 @@ export function useAssessment() {
 
   const canProceedToNext = () => {
     if (!currentQuestion) return false;
-    const questionId = currentQuestion.id as keyof AssessmentAnswers;
-    return answers[questionId] !== undefined;
+    const questionId = currentQuestion.id;
+    return answers[questionId as keyof AssessmentAnswers] !== undefined;
   };
 
   return {
