@@ -286,15 +286,16 @@ function generateSummary(answers: AssessmentAnswers, recommendation: Recommendat
   const summary = `
 ## OCI SQL Server Migration Assessment Report
 
-**Customer Name:** ${answers.customerName || "Not provided"}
+**Customer/Company Name:** ${answers.customerName || "Not provided"}
 **Number of SQL Server Instances to Migrate:** ${answers.numInstances || "Not specified"}
 
 ---
 
 ### Current State Assessment
 
-| Aspect | Details |
-|--------|---------|
+| **Aspect** | **Details** |
+|--------|----------|
+| **Customer/Company** | ${answers.customerName || "Not provided"} |
 | **Current Version** | ${currentVersion} ${currentEdition} Edition |
 | **Current Deployment** | ${answers.currentDeployment || "Unknown"} |
 | **Deployment Type** | ${answers.currentDeploymentType === "paas" ? "PaaS (Managed Service)" : "IaaS (Virtual Machines)"} |
@@ -380,7 +381,7 @@ export const QUESTIONS = [
   {
     id: "customerName",
     category: "Customer Information",
-    question: "What is your name or company name?",
+    question: "Who is the customer looking to migrate SQL Server?",
     type: "text",
     options: [],
   },
