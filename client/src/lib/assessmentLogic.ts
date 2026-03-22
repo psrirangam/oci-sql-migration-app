@@ -37,12 +37,51 @@ export interface Recommendation {
   licensingDetails: string;
   complianceNotes: string;
   marketplaceLinks?: string[];
+  recommendedInstances?: string[];
 }
 
 export interface AssessmentResult {
   recommendation: Recommendation;
   summary: string;
   estimatedComplexity: "Low" | "Medium" | "High";
+}
+
+function getRecommendedInstances(edition: string, hadrRequirements: string): string[] {
+  const instances: string[] = [];
+
+  if (edition === "enterprise") {
+    if (hadrRequirements === "disaster-recovery") {
+      instances.push("Primary: BM.Standard.E5 or BM.Standard.E6 (96-128 cores, maximum performance)");
+      instances.push("DR: VM.Optimized.E5.Flex (32-64 vCPU, cost-optimized)");
+    } else if (hadrRequirements === "advanced-ha") {
+      instances.push("VM.Optimized.E5.Flex (32-64 vCPU, memory-optimized for HA)");
+      instances.push("Alternative: BM.Standard.E5 (96 cores, if maximum performance needed)");
+    } else if (hadrRequirements === "basic-ha") {
+      instances.push("VM.Optimized.E5.Flex (16-32 vCPU, memory-optimized)");
+      instances.push("Alternative: VM.Standard.E5.Flex (16-32 vCPU, if cost is priority)");
+    } else {
+      instances.push("VM.Optimized.E5.Flex (16-32 vCPU, memory-optimized for critical workloads)");
+      instances.push("Alternative: VM.Standard.E5.Flex (16-32 vCPU, for general workloads)");
+    }
+  } else if (edition === "standard") {
+    if (hadrRequirements === "disaster-recovery") {
+      instances.push("VM.Optimized.E5.Flex (16-24 vCPU, max 24 cores for Standard)");
+      instances.push("DR: VM.Standard.E5.Flex (8-12 vCPU, cost-optimized)");
+    } else if (hadrRequirements === "advanced-ha") {
+      instances.push("VM.Optimized.E5.Flex (16-24 vCPU, memory-optimized)");
+    } else if (hadrRequirements === "basic-ha") {
+      instances.push("VM.Standard.E5.Flex (16-24 vCPU, balanced performance)");
+    } else {
+      instances.push("VM.Standard.E5.Flex (16-24 vCPU, general purpose)");
+      instances.push("Alternative: VM.Optimized.E5.Flex (16-24 vCPU, if memory-intensive)");
+    }
+  } else if (edition === "web") {
+    instances.push("VM.Standard.E5.Flex (8-16 vCPU, cost-effective)");
+  } else {
+    instances.push("VM.Standard.E5.Flex (4-8 vCPU, Express/Dev)");
+  }
+
+  return instances;
 }
 
 export function generateRecommendation(answers: AssessmentAnswers): AssessmentResult {
@@ -56,6 +95,7 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
     keyBenefits: [],
     nextSteps: [],
     marketplaceLinks: [],
+    recommendedInstances: [],
   };
 
   // Determine if customer is upgrading or staying on same version
@@ -77,125 +117,198 @@ export function generateRecommendation(answers: AssessmentAnswers): AssessmentRe
     recommendation.complianceNotes = "Note: OCI does not offer native PaaS for SQL Server. You must migrate to IaaS with License Included (OCI Marketplace images) or BYOL options below.";
   }
 
+  // Get recommended instances
+  recommendation.recommendedInstances = getRecommendedInstances(answers.targetEdition || "standard", answers.hadrRequirements || "no-hadr");
+
   // Determine deployment model based on edition and HA/DR requirements
   if (answers.targetEdition === "enterprise") {
     if (answers.hadrRequirements === "disaster-recovery") {
-      recommendation.deploymentModel = "Bare Metal or VM.Optimized3.Flex (for maximum performance)";
+      recommendation.deploymentModel = "Bare Metal (BM.Standard.E5/E6) or VM.Optimized3.Flex (for maximum performance and multi-region HA)";
       recommendation.architecture = "Multi-region AlwaysOn Availability Groups with OCI FastConnect";
     } else if (answers.hadrRequirements === "advanced-ha") {
-      recommendation.deploymentModel = "VM.Optimized3.Flex or VM.Standard3.Flex (balanced performance)";
+      recommendation.deploymentModel = "VM.Optimized.E5.Flex or Bare Metal (balanced performance and memory)";
       recommendation.architecture = "AlwaysOn Availability Groups within single Availability Domain";
     } else {
-      recommendation.deploymentModel = "VM.Standard3.Flex or VM.Optimized3.Flex";
+      recommendation.deploymentModel = "VM.Standard.E5.Flex or VM.Optimized.E5.Flex";
       recommendation.architecture = "Single instance or basic failover cluster";
     }
   } else if (answers.targetEdition === "standard") {
     if (answers.hadrRequirements === "disaster-recovery") {
-      recommendation.deploymentModel = "VM.Optimized3.Flex (max 24 cores)";
+      recommendation.deploymentModel = "VM.Optimized.E5.Flex (max 24 cores)";
       recommendation.architecture = "Multi-region failover with manual or automated scripts";
     } else if (answers.hadrRequirements === "advanced-ha") {
-      recommendation.deploymentModel = "VM.Standard3.Flex (max 24 cores)";
+      recommendation.deploymentModel = "VM.Standard.E5.Flex (max 24 cores)";
       recommendation.architecture = "Failover Cluster Instance within single Availability Domain";
     } else {
-      recommendation.deploymentModel = "VM.Standard3.Flex (max 24 cores)";
+      recommendation.deploymentModel = "VM.Standard.E5.Flex (max 24 cores)";
       recommendation.architecture = "Single instance deployment";
     }
   } else {
-    recommendation.deploymentModel = "VM.Standard.E4.Flex or smaller";
+    recommendation.deploymentModel = "VM.Standard.E5.Flex or smaller";
     recommendation.architecture = "Single instance deployment";
   }
 
   // Determine licensing option based on current state and rules
-  if (isGrandfathered && !isNewVersion && !isUpgrading) {
-    // Grandfathered license for existing workload on same version
-    recommendation.licensingOption = "BYOL (License Mobility - Grandfathered License)";
-    recommendation.licensingDetails = `Your SQL Server license was purchased before October 1, 2019 and qualifies for License Mobility on OCI. Since OCI is not a Listed Provider, you have maximum flexibility with your existing licenses.
-
-**Three BYOL Deployment Paths:**
-
-1. **BYOL + OCI Marketplace Images** (Fastest)
-   - Use pre-built SQL Server images from OCI Marketplace
-   - Bring your own licenses
-   - Fastest deployment path
-   - Pre-configured and tested
-
-2. **BYOL + Customer-Built Images** (Custom)
-   - Build custom SQL Server images with your licenses
-   - Full control over configuration
-   - Requires more setup time
-
-3. **BYOL + Migrate Existing Instances** (Migration)
-   - Migrate your existing SQL Server instances to OCI
-   - Keep existing configurations and data
-   - Requires migration planning
-
-All three options provide the lowest cost - only pay for OCI compute infrastructure.`;
-    recommendation.keyBenefits.push("Use existing licenses on OCI");
-    recommendation.keyBenefits.push("License Mobility available without restrictions");
-    recommendation.keyBenefits.push("Three flexible deployment paths");
-    recommendation.keyBenefits.push("Lowest cost option - only pay for compute");
-    recommendation.costConsiderations = "Lowest cost: only OCI compute charges. Requires valid Microsoft license and proper documentation.";
-    recommendation.complianceNotes = "Grandfathered licenses can be used on OCI for existing workloads. When upgrading to new versions, new licensing rules apply.";
-    recommendation.nextSteps.push("Contact SQL Server Licensing Partner: Pavan.srirangam@oracle.com for license verification");
-    recommendation.nextSteps.push("Choose deployment path: Marketplace images, custom build, or migration");
-    recommendation.nextSteps.push("Prepare license documentation for BYOL deployment");
-  } else if (isGrandfathered && hasSA) {
-    // Grandfathered with SA - can use for new workloads
+  if (isGrandfathered && hasSA) {
+    // Grandfathered license with SA - best case
     recommendation.licensingOption = "BYOL (License Mobility with Software Assurance)";
-    recommendation.licensingDetails = `With active Software Assurance and a grandfathered license, you have maximum flexibility on OCI for both existing and new workloads.
+    recommendation.licensingDetails = `Your SQL Server license was purchased before October 1, 2019 with active Software Assurance. This is the most cost-effective option for OCI deployment.
 
-**Three BYOL Deployment Paths:**
+**Two BYOL Deployment Paths:**
 
-1. **BYOL + OCI Marketplace Images** (Fastest)
-   - Use pre-built SQL Server images from OCI Marketplace
-   - Bring your own licenses
-   - Fastest deployment path
+**Path 1: BYOL + OCI Marketplace Images** (Recommended - Fastest)
+- Use pre-built SQL Server images from OCI Marketplace
+- Bring your own grandfathered licenses with Software Assurance
+- Fastest deployment path (hours, not days)
+- Pre-configured and tested
+- Includes Windows Server licensing
+- Best for: Quick migration, standard configurations
 
-2. **BYOL + Customer-Built Images** (Custom)
-   - Build custom SQL Server images with your licenses
-   - Full control over configuration
+**Path 2: BYOL + Migrate Existing Instances** (Migration)
+- Migrate your existing SQL Server instances to OCI
+- Keep existing configurations and data
+- Use OCI Database Migration Service
+- Best for: Preserving complex configurations, existing databases
 
-3. **BYOL + Migrate Existing Instances** (Migration)
-   - Migrate your existing SQL Server instances to OCI
-   - Keep existing configurations and data
+**Cost Advantage:**
+With Software Assurance, you only pay for OCI compute infrastructure. No additional SQL Server licensing costs. This is the lowest-cost deployment option.
 
-With Software Assurance, you can also upgrade versions and add new workloads.`;
-    recommendation.keyBenefits.push("Use SA benefits on OCI");
-    recommendation.keyBenefits.push("Full License Mobility flexibility");
-    recommendation.keyBenefits.push("Can add new workloads with SA coverage");
-    recommendation.keyBenefits.push("Three flexible deployment paths");
-    recommendation.costConsiderations = "Cost includes SA maintenance + OCI compute. Lowest total cost for long-term deployments.";
-    recommendation.complianceNotes = "Software Assurance provides maximum flexibility for workload expansion and version upgrades.";
+**Flexibility:**
+Software Assurance allows you to upgrade versions and add new workloads without additional licensing costs.`;
+    recommendation.keyBenefits.push("Use existing grandfathered licenses with Software Assurance");
+    recommendation.keyBenefits.push("License Mobility available without restrictions");
+    recommendation.keyBenefits.push("Lowest cost option - only pay for compute");
+    recommendation.keyBenefits.push("Can upgrade versions and add new workloads");
+    recommendation.costConsiderations = "Lowest cost: only OCI compute charges. Your SA covers licensing. Estimated 30-50% savings vs License Included.";
+    recommendation.complianceNotes = "Software Assurance provides maximum flexibility for workload expansion and version upgrades on OCI.";
     recommendation.nextSteps.push("Contact SQL Server Licensing Partner: Pavan.srirangam@oracle.com for license verification");
-    recommendation.nextSteps.push("Choose deployment path: Marketplace images, custom build, or migration");
-    recommendation.nextSteps.push("Verify SA coverage and renewal dates");
+    recommendation.nextSteps.push("Choose deployment path: Marketplace images or migration");
+    recommendation.nextSteps.push("Prepare license documentation for BYOL deployment");
+  } else if (isGrandfathered && !isNewVersion && !isUpgrading) {
+    // Grandfathered license without SA - can use for existing workload only
+    recommendation.licensingOption = "BYOL (License Mobility - Grandfathered License)";
+    recommendation.licensingDetails = `Your SQL Server license was purchased before October 1, 2019 and qualifies for License Mobility on OCI. However, without Software Assurance, usage is limited to existing workloads on the same version.
+
+**Two BYOL Deployment Paths:**
+
+**Path 1: BYOL + OCI Marketplace Images** (Recommended - Fastest)
+- Use pre-built SQL Server images from OCI Marketplace
+- Bring your own grandfathered licenses
+- Fastest deployment path
+- Pre-configured and tested
+- Best for: Quick migration of existing workloads
+
+**Path 2: BYOL + Migrate Existing Instances** (Migration)
+- Migrate your existing SQL Server instances to OCI
+- Keep existing configurations and data
+- Use OCI Database Migration Service
+- Best for: Preserving complex configurations
+
+**Cost Advantage:**
+You only pay for OCI compute infrastructure. No additional SQL Server licensing costs for existing workloads.
+
+**Limitations:**
+- Cannot add new workloads with this license
+- Cannot upgrade to new SQL Server versions
+- Consider purchasing Software Assurance for flexibility`;
+    recommendation.keyBenefits.push("Use existing grandfathered licenses on OCI");
+    recommendation.keyBenefits.push("License Mobility available without restrictions");
+    recommendation.keyBenefits.push("Lowest cost for existing workloads");
+    recommendation.costConsiderations = "Lowest cost: only OCI compute charges. Estimated 30-50% savings vs License Included. Limited to existing workloads only.";
+    recommendation.complianceNotes = "Grandfathered licenses can be used on OCI for existing workloads only. Cannot add new workloads or upgrade versions without Software Assurance.";
+    recommendation.nextSteps.push("Contact SQL Server Licensing Partner: Pavan.srirangam@oracle.com for license verification");
+    recommendation.nextSteps.push("Choose deployment path: Marketplace images or migration");
+    recommendation.nextSteps.push("Consider purchasing Software Assurance for future flexibility");
+  } else if (!isGrandfathered && hasSA) {
+    // New license with SA
+    recommendation.licensingOption = "License Included (OCI Marketplace) or BYOL with New Licenses";
+    recommendation.licensingDetails = `You have active Software Assurance but no grandfathered licenses. You have two options:
+
+**Option 1: License Included (Recommended for Simplicity)**
+- Use pre-built SQL Server images from OCI Marketplace
+- Licensing included in hourly rate
+- Includes Microsoft support and updates
+- Fastest deployment path
+- Simplified compliance
+- Best for: Quick deployment, no license procurement needed
+
+**Option 2: BYOL with New Licenses (Cost Optimization)**
+If you're purchasing new SQL Server licenses with Software Assurance:
+
+**Path 1: BYOL + OCI Marketplace Images** (Fastest)
+- Use pre-built SQL Server images from OCI Marketplace
+- Bring new licenses with Software Assurance
+- Fastest deployment path
+- Pre-configured and tested
+
+**Path 2: BYOL + Customer-Built Images** (Custom)
+- Build custom SQL Server images with your licenses
+- Full control over configuration
+- Requires more setup time
+
+**Cost Comparison:**
+- License Included: Higher per-hour cost (~40-50% premium), includes support
+- BYOL with New Licenses: Lower compute costs but requires license purchase
+
+**Recommendation:**
+For new deployments with Software Assurance, License Included is often simpler. For long-term deployments (3+ years), BYOL with new licenses may provide better ROI.`;
+    recommendation.keyBenefits.push("License Included: Simplified licensing, includes support");
+    recommendation.keyBenefits.push("BYOL: Cost-effective for long-term deployments");
+    recommendation.keyBenefits.push("Software Assurance provides flexibility");
+    recommendation.costConsiderations = "License Included: ~40-50% premium, includes support. BYOL: Lower compute costs but requires license purchase (~$2,000-5,000 per 2-core pack).";
+    recommendation.complianceNotes = "License Included includes Microsoft support. BYOL requires proper license documentation and verification.";
+    recommendation.nextSteps.push("Review OCI Marketplace SQL Server offerings for License Included option");
+    recommendation.nextSteps.push("Contact SQL Server Licensing Partner: Pavan.srirangam@oracle.com for new license pricing");
+    recommendation.nextSteps.push("Compare License Included vs BYOL costs for your workload");
   } else {
-    // No grandfathered license or new workload - recommend License Included or BYOL
-    recommendation.licensingOption = "License Included (OCI Marketplace) or BYOL";
+    // No grandfathered license, no SA - recommend License Included or BYOL with new licenses
+    recommendation.licensingOption = "License Included (OCI Marketplace) or BYOL with New Licenses";
     recommendation.licensingDetails = `For new workloads or if you don't have grandfathered licenses, you have two main options:
 
 **Option 1: License Included (Recommended for Simplicity)**
 - Use pre-built SQL Server images from OCI Marketplace
 - Licensing included in hourly rate
-- Includes Microsoft support
+- Includes Microsoft support and updates
 - Fastest deployment path
 - Simplified compliance
+- No license procurement needed
+- Best for: Quick deployment, standard configurations
 
-**Option 2: BYOL (If You Have Available Licenses)**
-Three deployment paths:
-1. **BYOL + OCI Marketplace Images** - Use pre-built images with your licenses (fastest)
-2. **BYOL + Customer-Built Images** - Build custom images with your licenses
-3. **BYOL + Migrate Existing Instances** - Migrate existing SQL Server instances
+**Option 2: BYOL with New Licenses (If Purchasing New Licenses)**
+If you're purchasing new SQL Server licenses:
 
-BYOL provides lower compute costs but requires valid licenses and documentation.`;
+**Path 1: BYOL + OCI Marketplace Images** (Fastest)
+- Use pre-built SQL Server images from OCI Marketplace
+- Bring new licenses
+- Fastest deployment path
+- Pre-configured and tested
+- Best for: Standard configurations with new licenses
+
+**Path 2: BYOL + Customer-Built Images** (Custom)
+- Build custom SQL Server images with your licenses
+- Full control over configuration
+- Requires more setup time
+- Best for: Custom configurations
+
+**Special Consideration for PaaS Migrations:**
+If you're migrating from PaaS (Azure SQL Database, AWS RDS, Google Cloud SQL):
+- **License Included**: Simplest path, includes support, no license procurement
+- **BYOL with New Licenses**: Contact our licensing partner for cost-optimized licensing strategy
+
+**Cost Comparison:**
+- License Included: ~40-50% premium, includes support
+- BYOL with New Licenses: Lower compute costs but requires license purchase (~$2,000-5,000 per 2-core pack)
+
+**Recommendation:**
+For new deployments without existing licenses, License Included is recommended for simplicity and support.`;
     recommendation.keyBenefits.push("License Included: Simplified licensing, includes support");
-    recommendation.keyBenefits.push("BYOL: Cost-effective if licenses available");
+    recommendation.keyBenefits.push("BYOL: Cost-effective if purchasing new licenses");
     recommendation.keyBenefits.push("OCI Marketplace provides pre-configured images");
     recommendation.keyBenefits.push("Flexible deployment options for both models");
-    recommendation.costConsiderations = "License Included: Higher per-hour cost (~40-50% premium), includes support. BYOL: Lower compute costs but requires valid licenses and documentation.";
+    recommendation.costConsiderations = "License Included: ~40-50% premium, includes support. BYOL: Lower compute costs but requires new license purchase (~$2,000-5,000 per 2-core pack).";
     recommendation.complianceNotes = "License Included includes Microsoft support and simplified compliance. BYOL requires proper license documentation and verification.";
     recommendation.nextSteps.push("Review OCI Marketplace SQL Server offerings for License Included option");
-    recommendation.nextSteps.push("If choosing BYOL: Contact SQL Server Licensing Partner: Pavan.srirangam@oracle.com for license verification");
+    recommendation.nextSteps.push("If choosing BYOL: Contact SQL Server Licensing Partner: Pavan.srirangam@oracle.com for new license pricing");
     recommendation.nextSteps.push("Compare License Included vs BYOL costs for your workload");
   }
 
@@ -246,6 +359,7 @@ BYOL provides lower compute costs but requires valid licenses and documentation.
   }
 
   // Add general next steps
+  recommendation.nextSteps.push("Review recommended OCI instance types and sizing");
   recommendation.nextSteps.push("Review OCI Marketplace SQL Server images");
   recommendation.nextSteps.push("Estimate costs using OCI Cost Estimator");
   recommendation.nextSteps.push("Schedule OCI architecture review");
@@ -302,6 +416,18 @@ export function generateSummary(answers: AssessmentAnswers, recommendation: Reco
 
 ---
 
+### Recommended OCI Instance Types
+
+${recommendation.recommendedInstances?.map(instance => `- ${instance}`).join('\n')}
+
+**Instance Type Guidance:**
+- **VM.Standard.E5.Flex**: General-purpose workloads, balanced performance (1 GB memory per vCPU)
+- **VM.Optimized.E5.Flex**: Memory-intensive workloads, critical applications (2-4 GB memory per vCPU)
+- **BM.Standard.E5/E6**: Maximum performance, mission-critical workloads (Bare Metal, 96-128 cores)
+- **Extended Memory**: Very large databases (8-16 GB memory per vCPU)
+
+---
+
 ### OCI Recommendation
 
 **Licensing Strategy:** ${recommendation.licensingOption}
@@ -341,7 +467,7 @@ ${recommendation.nextSteps.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}
 
 For SQL Server licensing questions and optimization:
 - **Contact:** Pavan.srirangam@oracle.com
-- **Topic:** SQL Server licensing strategy, BYOL optimization, cost analysis
+- **Topic:** SQL Server licensing strategy, BYOL optimization, cost analysis, new license procurement
 
 ---
 
