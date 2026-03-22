@@ -625,8 +625,7 @@ export const QUESTIONS = [
     options: [
       { value: "enterprise", label: "Enterprise Edition (Unlimited virtualization with SA)" },
       { value: "standard", label: "Standard Edition (Max 24 cores, limited virtualization)" },
-      { value: "web", label: "Web Edition (Limited features, cloud-only)" },
-      { value: "express", label: "Express Edition (Max 4 cores, 10 GB database)" },
+      { value: "developer", label: "Developer Edition (Full features, development/testing only)" },
     ],
   },
 
