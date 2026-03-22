@@ -14,7 +14,6 @@ export interface AssessmentRecord {
   softwareAssurance: string;
   targetVersion: string;
   targetEdition: string;
-  targetCloud: string;
   hadrRequirements: string;
   migrationApproach: string;
   recommendedDeploymentModel: string;
@@ -40,7 +39,6 @@ export function convertAssessmentToRecord(
     softwareAssurance: answers.softwareAssurance || "Unknown",
     targetVersion: answers.targetVersion || "Unknown",
     targetEdition: answers.targetEdition || "Unknown",
-    targetCloud: answers.targetCloud || "Unknown",
     hadrRequirements: answers.hadrRequirements || "Unknown",
     migrationApproach: answers.migrationApproach || "Unknown",
     recommendedDeploymentModel: recommendation.deploymentModel,
@@ -64,7 +62,6 @@ export function recordToCSVRow(record: AssessmentRecord): string {
     escapeCSVValue(record.softwareAssurance),
     escapeCSVValue(record.targetVersion),
     escapeCSVValue(record.targetEdition),
-    escapeCSVValue(record.targetCloud),
     escapeCSVValue(record.hadrRequirements),
     escapeCSVValue(record.migrationApproach),
     escapeCSVValue(record.recommendedDeploymentModel),
@@ -89,7 +86,6 @@ export function getCSVHeaders(): string {
     "Software Assurance",
     "Target Version",
     "Target Edition",
-    "Target Cloud",
     "HA/DR Requirements",
     "Migration Approach",
     "Recommended Deployment Model",

@@ -8,7 +8,6 @@ export function useAssessment() {
 
   const currentQuestion = QUESTIONS[currentQuestionIndex];
   const totalQuestions = QUESTIONS.length;
-  const progressPercentage = Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100);
 
   // Filter visible questions based on conditional logic
   const visibleQuestions = QUESTIONS.filter((q) => {
@@ -18,7 +17,7 @@ export function useAssessment() {
   });
 
   const visibleQuestionIndex = visibleQuestions.findIndex((q) => q.id === currentQuestion?.id);
-  const visibleProgressPercentage = Math.round(((visibleQuestionIndex + 1) / visibleQuestions.length) * 100);
+  const progressPercentage = Math.round(((visibleQuestionIndex + 1) / visibleQuestions.length) * 100);
 
   const handleAnswer = useCallback(
     (questionId: string, value: string | number) => {
@@ -58,7 +57,6 @@ export function useAssessment() {
       softwareAssurance: (answers.softwareAssurance as string) || "no",
       targetVersion: (answers.targetVersion as string) || "2022",
       targetEdition: (answers.targetEdition as string) || "standard",
-      targetCloud: (answers.targetCloud as string) || "oci",
       hadrRequirements: (answers.hadrRequirements as string) || "no-hadr",
       migrationApproach: (answers.migrationApproach as string) || "lift-shift",
     };
@@ -85,7 +83,7 @@ export function useAssessment() {
     totalQuestions,
     visibleQuestions,
     visibleQuestionIndex,
-    progressPercentage: visibleProgressPercentage,
+    progressPercentage,
     answers,
     result,
     handleAnswer,
