@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { AssessmentProvider, useAssessmentContext } from "@/contexts/AssessmentContext";
 import QuestionnaireView from "@/components/QuestionnaireView";
 import RecommendationView from "@/components/RecommendationView";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 function HomeContent() {
   const { result, handleReset } = useAssessmentContext();
+  const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
@@ -16,7 +18,7 @@ function HomeContent() {
         {result ? (
           <>
             <RecommendationView />
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center gap-4 mt-8">
               <Button
                 onClick={handleReset}
                 variant="outline"
@@ -24,6 +26,14 @@ function HomeContent() {
                 className="gap-2"
               >
                 Start New Assessment
+              </Button>
+              <Button
+                onClick={() => setLocation("/")}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                Back to Overview
               </Button>
             </div>
           </>

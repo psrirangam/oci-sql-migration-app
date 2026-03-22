@@ -1,9 +1,16 @@
+import { useLocation } from "wouter";
+
 export default function Header() {
+  const [location, setLocation] = useLocation();
+  
   return (
     <header className="bg-white dark:bg-card border-b border-border shadow-sm">
       <div className="container py-6 md:py-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setLocation("/")}
+          >
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
               <span className="text-white font-bold text-lg">OCI</span>
             </div>
@@ -16,10 +23,27 @@ export default function Header() {
               </p>
             </div>
           </div>
-          <div className="hidden md:block text-right">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              Based on SQL Server 2022 Licensing Guide
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setLocation("/")}
+              className={`text-sm font-medium transition-colors ${
+                location === "/" || location === "/showcase"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setLocation("/assessment")}
+              className={`text-sm font-medium transition-colors ${
+                location === "/assessment"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Assessment
+            </button>
           </div>
         </div>
       </div>
