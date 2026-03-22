@@ -4,31 +4,32 @@ export default function Header() {
   const [location, setLocation] = useLocation();
   
   return (
-    <header className="bg-white dark:bg-card border-b border-border shadow-sm">
-      <div className="container py-6 md:py-8">
+    <header className="bg-white dark:bg-card border-b-2 border-primary shadow-md">
+      <div className="container py-4 md:py-6">
         <div className="flex items-center justify-between">
           <div 
-            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => setLocation("/")}
           >
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">OCI</span>
+            {/* Oracle Red Logo Box */}
+            <div className="w-12 h-12 rounded-md bg-primary flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-xl">OCI</span>
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                 SQL Server Migration
               </h1>
-              <p className="text-sm text-muted-foreground">
-                Assessment & OCI Recommendation Tool
+              <p className="text-xs md:text-sm text-muted-foreground font-medium">
+                Oracle Cloud Infrastructure Assessment Tool
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <button
               onClick={() => setLocation("/")}
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-semibold transition-all duration-200 ${
                 location === "/" || location === "/showcase"
-                  ? "text-primary"
+                  ? "text-primary border-b-2 border-primary pb-1"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -36,9 +37,9 @@ export default function Header() {
             </button>
             <button
               onClick={() => setLocation("/assessment")}
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-semibold transition-all duration-200 ${
                 location === "/assessment"
-                  ? "text-primary"
+                  ? "text-primary border-b-2 border-primary pb-1"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >

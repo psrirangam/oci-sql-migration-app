@@ -43,81 +43,81 @@
 }
 
 :root {
-  /* Oracle-inspired color palette */
-  --primary: #FF6B35; /* Oracle Red */
+  /* Oracle Corporate Red and White Palette */
+  --primary: #F80000; /* Oracle Red */
   --primary-foreground: #FFFFFF;
-  --sidebar-primary: #0051BA; /* Oracle Blue */
+  --sidebar-primary: #F80000; /* Oracle Red */
   --sidebar-primary-foreground: #FFFFFF;
-  --accent: #FFB81C; /* Oracle Gold */
-  --accent-foreground: #1A1A1A;
+  --accent: #FFFFFF; /* White accent */
+  --accent-foreground: #F80000;
   
   /* Chart colors */
-  --chart-1: #FF6B35;
-  --chart-2: #0051BA;
-  --chart-3: #FFB81C;
+  --chart-1: #F80000;
+  --chart-2: #CC0000;
+  --chart-3: #990000;
   --chart-4: #1A1A1A;
-  --chart-5: #6B7280;
+  --chart-5: #666666;
   
   /* Spacing and radius */
-  --radius: 0.65rem;
+  --radius: 0.5rem;
   
-  /* Light theme */
-  --background: oklch(0.98 0.001 286.375);
-  --foreground: oklch(0.15 0.02 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 65);
-  --secondary: oklch(0.96 0.002 286.375);
-  --secondary-foreground: oklch(0.35 0.015 65);
-  --muted: oklch(0.92 0.004 286.32);
-  --muted-foreground: oklch(0.55 0.016 285.938);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.88 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: #FF6B35;
-  --sidebar: oklch(0.98 0.001 286.375);
-  --sidebar-foreground: oklch(0.15 0.02 65);
-  --sidebar-accent: oklch(0.92 0.004 286.32);
-  --sidebar-accent-foreground: #FF6B35;
-  --sidebar-border: oklch(0.88 0.004 286.32);
-  --sidebar-ring: #FF6B35;
+  /* Light theme - Clean white background */
+  --background: #FFFFFF;
+  --foreground: #1A1A1A;
+  --card: #F5F5F5;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --secondary: #F5F5F5;
+  --secondary-foreground: #333333;
+  --muted: #E8E8E8;
+  --muted-foreground: #666666;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #E0E0E0;
+  --input: #F5F5F5;
+  --ring: #F80000;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-accent: #F5F5F5;
+  --sidebar-accent-foreground: #F80000;
+  --sidebar-border: #E0E0E0;
+  --sidebar-ring: #F80000;
 }
 
 .dark {
-  --primary: #FF6B35;
+  --primary: #F80000;
   --primary-foreground: #FFFFFF;
-  --sidebar-primary: #0051BA;
+  --sidebar-primary: #F80000;
   --sidebar-primary-foreground: #FFFFFF;
-  --background: oklch(0.12 0.005 285.823);
-  --foreground: oklch(0.9 0.005 65);
-  --card: oklch(0.18 0.006 285.885);
-  --card-foreground: oklch(0.9 0.005 65);
-  --popover: oklch(0.18 0.006 285.885);
-  --popover-foreground: oklch(0.9 0.005 65);
-  --secondary: oklch(0.22 0.006 286.033);
-  --secondary-foreground: oklch(0.75 0.005 65);
-  --muted: oklch(0.30 0.006 286.033);
-  --muted-foreground: oklch(0.70 0.015 286.067);
-  --accent: #FFB81C;
-  --accent-foreground: oklch(0.12 0.005 285.823);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 15%);
-  --input: oklch(1 0 0 / 20%);
-  --ring: #FF6B35;
-  --chart-1: #FF6B35;
-  --chart-2: #0051BA;
-  --chart-3: #FFB81C;
-  --chart-4: #E5E7EB;
-  --chart-5: #9CA3AF;
-  --sidebar: oklch(0.18 0.006 285.885);
-  --sidebar-foreground: oklch(0.9 0.005 65);
-  --sidebar-accent: oklch(0.30 0.006 286.033);
-  --sidebar-accent-foreground: #FF6B35;
-  --sidebar-border: oklch(1 0 0 / 15%);
-  --sidebar-ring: #FF6B35;
+  --background: #0F0F0F;
+  --foreground: #FFFFFF;
+  --card: #1A1A1A;
+  --card-foreground: #FFFFFF;
+  --popover: #1A1A1A;
+  --popover-foreground: #FFFFFF;
+  --secondary: #2A2A2A;
+  --secondary-foreground: #E0E0E0;
+  --muted: #404040;
+  --muted-foreground: #B0B0B0;
+  --accent: #FFFFFF;
+  --accent-foreground: #F80000;
+  --destructive: #EF4444;
+  --destructive-foreground: #0F0F0F;
+  --border: #333333;
+  --input: #2A2A2A;
+  --ring: #F80000;
+  --chart-1: #F80000;
+  --chart-2: #CC0000;
+  --chart-3: #990000;
+  --chart-4: #FFFFFF;
+  --chart-5: #B0B0B0;
+  --sidebar: #1A1A1A;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-accent: #2A2A2A;
+  --sidebar-accent-foreground: #F80000;
+  --sidebar-border: #333333;
+  --sidebar-ring: #F80000;
 }
 
 @layer base {
@@ -126,7 +126,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -139,47 +139,17 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
-  
-  /* Typography hierarchy */
-  h1 {
-    @apply text-4xl font-bold tracking-tight;
-  }
-  h2 {
-    @apply text-3xl font-bold tracking-tight;
-  }
-  h3 {
-    @apply text-2xl font-semibold;
-  }
-  h4 {
-    @apply text-xl font-semibold;
-  }
-  h5 {
-    @apply text-lg font-medium;
-  }
-  h6 {
-    @apply text-base font-medium;
-  }
 }
 
 @layer components {
   /**
    * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
    */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -190,39 +160,45 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
   }
-  
-  /* Custom components for questionnaire */
-  .progress-ring {
-    @apply relative inline-flex items-center justify-center;
+
+  /* Oracle Red Button Style */
+  .btn-oracle {
+    @apply bg-primary text-primary-foreground hover:bg-red-700 active:bg-red-900 font-semibold px-6 py-3 rounded-md transition-colors duration-200;
   }
-  
-  .progress-ring-circle {
-    @apply transition-all duration-500;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
+
+  /* Oracle Red Text Link */
+  .link-oracle {
+    @apply text-primary hover:underline font-medium;
   }
-  
-  .question-card {
-    @apply bg-card text-card-foreground rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+
+  /* Oracle Header Style */
+  .oracle-header {
+    @apply bg-white border-b border-border shadow-sm;
   }
-  
-  .recommendation-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary;
+
+  /* Oracle Card Style */
+  .oracle-card {
+    @apply bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow duration-200;
   }
-  
-  .benefit-item {
-    @apply flex items-start gap-3 p-3 rounded-md bg-secondary/50 text-sm;
+
+  /* Oracle Badge */
+  .oracle-badge {
+    @apply bg-red-100 text-primary px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .dark .oracle-badge {
+    @apply bg-red-900 text-red-100;
   }
 }
