@@ -11,7 +11,7 @@ function HomeContent() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+    <div className="min-h-screen bg-white">
       <Header />
       
       <main className="container py-8 md:py-12">

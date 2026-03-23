@@ -2,9 +2,10 @@ import { useAssessmentContext } from "@/contexts/AssessmentContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Zap, Target, Download } from "lucide-react";
+import { CheckCircle2, AlertCircle, Zap, Target, Download, FileText } from "lucide-react";
 import { useEffect } from "react";
-import { convertAssessmentToRecord, saveRecordToLocalStorage, downloadAllRecords } from "@/lib/csvExport";
+import { convertAssessmentToRecord, saveRecordToLocalStorage } from "@/lib/csvExport";
+import { generatePDF } from "@/lib/pdfExport";
 
 export default function RecommendationView() {
   const { result, answers } = useAssessmentContext();
@@ -27,6 +28,10 @@ export default function RecommendationView() {
     Low: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     Medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
     High: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  };
+
+  const handleDownloadPDF = () => {
+    generatePDF(answers as any, result, recommendation);
   };
 
   return (
@@ -163,28 +168,27 @@ export default function RecommendationView() {
         </CardContent>
       </Card>
 
-      {/* Export Data Section */}
+      {/* Download Report Section */}
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Download className="w-5 h-5" />
-            Export Assessment Data
+            <FileText className="w-5 h-5" />
+            Download Assessment Report
           </CardTitle>
           <CardDescription>
-            Download all captured assessment records as CSV for analysis and follow-up
+            Download your personalized assessment report as PDF for sharing with stakeholders
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button 
-            onClick={downloadAllRecords}
-            className="w-full md:w-auto"
-            variant="default"
+            onClick={handleDownloadPDF}
+            className="w-full md:w-auto bg-primary hover:bg-red-700 text-white font-bold"
           >
             <Download className="w-4 h-4 mr-2" />
-            Download All Assessments (CSV)
+            Download Report (PDF)
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            This will download all customer assessments including names, emails, and recommendations for your records.
+            This PDF includes your complete assessment details, customer information, and OCI recommendations.
           </p>
         </CardContent>
       </Card>
@@ -197,8 +201,8 @@ export default function RecommendationView() {
           Microsoft licensing representative or Oracle Cloud sales team.
         </p>
         <p>
-          <strong>OCI Resources:</strong> Visit the OCI documentation for detailed deployment guides, 
-          pricing information, and support resources.
+          <strong>OCI Resources:</strong> Visit the OCI documentation for detailed deployment guides,
+          or contact your Oracle sales representative for implementation support.
         </p>
       </div>
     </div>
