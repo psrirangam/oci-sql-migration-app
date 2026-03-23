@@ -483,7 +483,7 @@ export const QUESTIONS = [
   {
     id: "customerName",
     category: "Customer Information",
-    question: "Who is the customer looking to migrate SQL Server?",
+    question: "What's the customer name looking to migrate SQL server to OCI?",
     type: "text",
     options: [],
   },
