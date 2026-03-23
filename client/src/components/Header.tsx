@@ -53,35 +53,12 @@ export default function Header() {
             >
               Assessment
             </button>
-            {isAdminLoggedIn ? (
-              <>
-                <button
-                  onClick={() => setLocation("/admin")}
-                  className={`text-sm font-semibold transition-all duration-200 ${
-                    location === "/admin"
-                      ? "text-primary border-b-2 border-primary pb-1"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Admin
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
+            {isAdminLoggedIn && (
               <button
-                onClick={() => setLocation("/admin-login")}
-                className={`text-sm font-semibold transition-all duration-200 ${
-                  location === "/admin-login"
-                    ? "text-primary border-b-2 border-primary pb-1"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                onClick={handleLogout}
+                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
               >
-                Admin Login
+                Logout
               </button>
             )}
           </div>

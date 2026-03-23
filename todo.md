@@ -32,7 +32,11 @@
 - [x] Update copyright and attribution
 - [x] Verify no Manus references remain
 
-## Phase 6: Final Testing & Delivery
+## Phase 6: Bug Fixes & Improvements
+- [x] Fix migration approach logic (Lift & Shift always, Re-platform for PaaS only, Re-factor for Oracle DBs)
+- [x] Redesign PDF with professional formatting and better spacing
+- [x] Update PDF color scheme to professional corporate style
+- [x] Admin dashboard login moved to /admin route (hidden from header)
 - [ ] Test questionnaire flow
 - [ ] Test admin login
 - [ ] Test assessment export

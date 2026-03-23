@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, AlertCircle, Check } from "lucide-react";
 import { useState } from "react";
 import { isValidOracleEmail } from "@/lib/csvExport";
+import { AssessmentAnswers } from "@/lib/assessmentLogic";
 
 export default function QuestionnaireView() {
   const [emailError, setEmailError] = useState<string>("");
@@ -114,12 +115,14 @@ export default function QuestionnaireView() {
           )}
         </CardHeader>
         <CardContent className="pt-6">
-          {currentQuestion.type === "radio" && currentQuestion.options ? (
+          {currentQuestion.type === "radio" ? (
             <RadioGroup value={String(currentAnswer || "")} onValueChange={handleInputChange}>
               <div className="space-y-3">
-                {currentQuestion.options.map((option) => {
-                  const isSelected = String(currentAnswer) === option.value;
-                  return (
+                {(() => {
+                  const options = currentQuestion.getOptions ? currentQuestion.getOptions(answers as AssessmentAnswers) : currentQuestion.options || [];
+                  return options.map((option) => {
+                    const isSelected = String(currentAnswer) === option.value;
+                    return (
                     <div
                       key={option.value}
                       className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
@@ -153,8 +156,9 @@ export default function QuestionnaireView() {
                         </div>
                       )}
                     </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             </RadioGroup>
           ) : (isTextInput || isEmailInput || isNumberInput) ? (
