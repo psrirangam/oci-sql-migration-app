@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Lock } from "lucide-react";
 
-const ADMIN_USERNAME = "Msadmin";
-const ADMIN_PASSWORD = "MSadmin@ccelerators";
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "msadmin";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();

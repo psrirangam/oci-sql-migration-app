@@ -19,7 +19,7 @@ interface AssessmentResult {
 }
 
 export function generatePDF(answers: AssessmentAnswers, result: AssessmentResult, recommendation: Recommendation) {
-  // Create HTML content for PDF with professional corporate colors
+  // Create HTML content for PDF with professional corporate colors and larger fonts
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -34,7 +34,7 @@ export function generatePDF(answers: AssessmentAnswers, result: AssessmentResult
         }
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.5;
+          line-height: 1.6;
           color: #2c3e50;
           background-color: #fff;
         }
@@ -42,104 +42,110 @@ export function generatePDF(answers: AssessmentAnswers, result: AssessmentResult
           max-width: 8.5in;
           height: 11in;
           margin: 0 auto;
-          padding: 0.4in;
+          padding: 0.5in;
           background-color: white;
         }
         .header {
           background: linear-gradient(135deg, #003366 0%, #004d99 100%);
           color: white;
-          padding: 0.25in;
-          margin-bottom: 0.2in;
+          padding: 0.3in;
+          margin-bottom: 0.25in;
           border-radius: 4px;
         }
         .header h1 {
-          font-size: 18px;
-          margin-bottom: 3px;
-          font-weight: 700;
+          font-size: 22px;
+          margin-bottom: 5px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
         }
         .header-meta {
           display: flex;
           justify-content: space-between;
-          font-size: 9px;
-          opacity: 0.9;
+          font-size: 11px;
+          opacity: 0.95;
+          font-weight: 500;
         }
         .customer-section {
           background-color: #f8f9fa;
-          border-left: 4px solid #FF6600;
-          padding: 0.12in;
-          margin-bottom: 0.15in;
-          font-size: 11px;
+          border-left: 5px solid #FF6600;
+          padding: 0.15in;
+          margin-bottom: 0.2in;
+          font-size: 13px;
         }
         .customer-name {
-          font-size: 13px;
-          font-weight: 700;
+          font-size: 16px;
+          font-weight: 800;
           color: #003366;
-          margin-bottom: 3px;
+          margin-bottom: 5px;
         }
         .customer-details {
           color: #555;
-          font-size: 9px;
-          line-height: 1.4;
+          font-size: 11px;
+          line-height: 1.5;
+          font-weight: 500;
         }
         .section-header {
           background-color: #003366;
           color: white;
-          padding: 0.08in 0.1in;
-          margin-top: 0.12in;
-          margin-bottom: 0.08in;
-          font-size: 11px;
-          font-weight: 700;
-          border-radius: 2px;
+          padding: 0.1in 0.12in;
+          margin-top: 0.15in;
+          margin-bottom: 0.1in;
+          font-size: 13px;
+          font-weight: 800;
+          border-radius: 3px;
         }
         .info-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 0.1in;
-          margin-bottom: 0.12in;
-          font-size: 9px;
+          gap: 0.12in;
+          margin-bottom: 0.15in;
+          font-size: 11px;
         }
         .info-box {
           background-color: #f0f4f8;
-          padding: 0.08in;
-          border-left: 3px solid #FF6600;
+          padding: 0.1in;
+          border-left: 4px solid #FF6600;
         }
         .info-label {
-          font-weight: 700;
+          font-weight: 800;
           color: #003366;
-          font-size: 8px;
+          font-size: 10px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          margin-bottom: 2px;
+          margin-bottom: 3px;
         }
         .info-value {
           color: #2c3e50;
-          font-size: 9px;
+          font-size: 11px;
+          font-weight: 600;
         }
         .option-box {
           background-color: #f8f9fa;
-          border-left: 3px solid #FF6600;
-          padding: 0.08in;
-          margin-bottom: 0.08in;
-          font-size: 9px;
+          border-left: 4px solid #FF6600;
+          padding: 0.1in;
+          margin-bottom: 0.1in;
+          font-size: 11px;
         }
         .option-title {
-          font-weight: 700;
+          font-weight: 800;
           color: #003366;
-          font-size: 9px;
-          margin-bottom: 2px;
+          font-size: 12px;
+          margin-bottom: 3px;
         }
         .option-desc {
           color: #555;
-          font-size: 8px;
-          line-height: 1.3;
+          font-size: 10px;
+          line-height: 1.4;
+          font-weight: 500;
         }
         .benefits-list {
           list-style: none;
-          font-size: 9px;
-          margin-bottom: 0.1in;
+          font-size: 11px;
+          margin-bottom: 0.12in;
+          font-weight: 500;
         }
         .benefits-list li {
-          padding: 2px 0 2px 15px;
+          padding: 3px 0 3px 18px;
           position: relative;
           color: #2c3e50;
         }
@@ -149,13 +155,14 @@ export function generatePDF(answers: AssessmentAnswers, result: AssessmentResult
           left: 0;
           color: #FF6600;
           font-weight: bold;
+          font-size: 14px;
         }
         .complexity-badge {
           display: inline-block;
-          padding: 2px 6px;
+          padding: 3px 8px;
           border-radius: 3px;
-          font-weight: 700;
-          font-size: 8px;
+          font-weight: 800;
+          font-size: 10px;
           text-transform: uppercase;
         }
         .complexity-low {
@@ -174,188 +181,160 @@ export function generatePDF(answers: AssessmentAnswers, result: AssessmentResult
           page-break-after: always;
         }
         .footer {
-          border-top: 1px solid #ddd;
-          padding-top: 0.08in;
-          margin-top: 0.1in;
-          font-size: 8px;
+          border-top: 2px solid #ddd;
+          padding-top: 0.1in;
+          margin-top: 0.12in;
+          font-size: 10px;
           color: #666;
-          line-height: 1.3;
+          line-height: 1.4;
+          font-weight: 500;
         }
         .contact-box {
           background-color: #e3f2fd;
-          border-left: 3px solid #2196F3;
-          padding: 0.08in;
-          font-size: 8px;
-          margin-top: 0.08in;
+          border-left: 4px solid #2196F3;
+          padding: 0.1in;
+          font-size: 10px;
+          margin-top: 0.1in;
+          font-weight: 500;
         }
         .contact-label {
-          font-weight: 700;
+          font-weight: 800;
           color: #1565c0;
+          font-size: 11px;
         }
         .disclaimer {
           background-color: #fff8e1;
-          border: 1px solid #FFB300;
-          padding: 0.08in;
-          margin-top: 0.08in;
-          font-size: 8px;
-          line-height: 1.3;
-          color: #5d4037;
+          border: 2px solid #FFB300;
+          padding: 0.1in;
+          margin-top: 0.1in;
+          font-size: 10px;
+          font-weight: 500;
+          line-height: 1.4;
         }
-        .disclaimer-title {
-          font-weight: 700;
-          color: #d84315;
-          margin-bottom: 2px;
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 0.1in 0;
+          font-size: 10px;
         }
-        .compact-text {
-          font-size: 8px;
-          line-height: 1.3;
+        th {
+          background-color: #003366;
+          color: white;
+          padding: 6px;
+          text-align: left;
+          font-weight: 800;
+          border: 1px solid #003366;
+        }
+        td {
+          padding: 6px;
+          border: 1px solid #ddd;
+          font-weight: 500;
+        }
+        tr:nth-child(even) {
+          background-color: #f8f9fa;
         }
       </style>
     </head>
     <body>
       <div class="container">
-        <!-- PAGE 1 -->
-        
-        <!-- HEADER -->
+        <!-- Page 1: Header & Summary -->
         <div class="header">
-          <h1>SQL Server Migration Assessment</h1>
+          <h1>OCI SQL Server Migration Assessment</h1>
           <div class="header-meta">
+            <span>Assessment ID: ${Date.now()}</span>
             <span>Date: ${new Date().toLocaleDateString()}</span>
-            <span>ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
           </div>
         </div>
 
-        <!-- CUSTOMER INFO -->
         <div class="customer-section">
-          <div class="customer-name">${answers.customerName || 'N/A'}</div>
+          <div class="customer-name">${answers.customerName}</div>
           <div class="customer-details">
-            <strong>Email:</strong> ${answers.customerEmail || 'N/A'}<br>
-            <strong>Instances to Migrate:</strong> ${answers.numInstances || 'N/A'}<br>
-            <strong>Complexity:</strong> <span class="complexity-badge complexity-${result.estimatedComplexity.toLowerCase()}">
-              ${result.estimatedComplexity}
-            </span>
+            <strong>Email:</strong> ${answers.customerEmail}<br>
+            <strong>SQL Server Instances:</strong> ${answers.numInstances}<br>
+            <strong>Assessment Complexity:</strong> <span class="complexity-badge complexity-${result.estimatedComplexity.toLowerCase()}">${result.estimatedComplexity}</span>
           </div>
         </div>
 
-        <!-- EXECUTIVE SUMMARY -->
-        <div class="section-header">Executive Summary</div>
-        <div class="compact-text" style="margin-bottom: 0.1in; color: #555;">
-          ${result.summary.split('\n').slice(0, 2).join('<br>')}
-        </div>
-
-        <!-- CURRENT & TARGET STATE -->
-        <div class="section-header">Assessment Details</div>
+        <div class="section-header">Current State Assessment</div>
         <div class="info-grid">
           <div class="info-box">
             <div class="info-label">Current Version</div>
-            <div class="info-value">${answers.currentlyRunning === 'yes' ? 'SQL Server ' + (answers.currentVersion || 'N/A') : 'New Deployment'}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-label">Target Version</div>
-            <div class="info-value">SQL Server ${answers.targetVersion || '2022'}</div>
+            <div class="info-value">${answers.currentVersion || 'N/A'}</div>
           </div>
           <div class="info-box">
             <div class="info-label">Current Edition</div>
             <div class="info-value">${answers.currentEdition || 'N/A'}</div>
           </div>
           <div class="info-box">
-            <div class="info-label">Target Edition</div>
-            <div class="info-value">${answers.targetEdition || 'N/A'}</div>
-          </div>
-          <div class="info-box">
-            <div class="info-label">Deployment</div>
+            <div class="info-label">Current Deployment</div>
             <div class="info-value">${answers.currentDeployment || 'N/A'}</div>
           </div>
           <div class="info-box">
-            <div class="info-label">HA/DR Strategy</div>
-            <div class="info-value">${answers.hadrRequirements || 'Standard'}</div>
+            <div class="info-label">Target Edition</div>
+            <div class="info-value">${answers.targetEdition || 'N/A'}</div>
           </div>
         </div>
 
-        <!-- RECOMMENDED INSTANCES -->
-        <div class="section-header">Recommended OCI Instance Types</div>
-        <div class="compact-text" style="margin-bottom: 0.1in;">
-          ${recommendation.recommendedInstances?.map(instance => `<div>• ${instance}</div>`).join('')}
+        <div class="section-header">Recommended OCI Deployment Path</div>
+        <div class="option-box">
+          <div class="option-title">${recommendation.deploymentModel}</div>
+          <div class="option-desc">${recommendation.licensingOption}</div>
         </div>
 
-        <!-- LICENSING OPTIONS -->
         <div class="section-header">Licensing Options</div>
-        <div style="font-size: 9px;">
-          ${recommendation.licensingDetails.split('\n\n').map((paragraph, idx) => {
-            if (paragraph.includes('**Option') || paragraph.includes('**Path')) {
-              const lines = paragraph.split('\n');
-              const title = lines[0].replace(/\*\*/g, '');
-              const desc = lines.slice(1).join(' ').replace(/\*\*/g, '').replace(/- /g, '• ');
-              return `
-                <div class="option-box">
-                  <div class="option-title">${title}</div>
-                  <div class="option-desc">${desc}</div>
-                </div>
-              `;
-            }
-            return `<div class="compact-text" style="margin-bottom: 0.05in;">${paragraph.replace(/\*\*/g, '')}</div>`;
-          }).join('')}
-        </div>
+        ${recommendation.licensingDetails.split('\n').map(line => 
+          line.trim() ? `<div class="option-box"><div class="option-desc">${line}</div></div>` : ''
+        ).join('')}
 
-        <!-- PAGE BREAK -->
         <div class="page-break"></div>
 
-        <!-- PAGE 2 -->
-        
-        <div class="header" style="margin-bottom: 0.15in;">
-          <h1>Assessment Details (Continued)</h1>
-          <div class="header-meta">
-            <span>${answers.customerName || 'N/A'}</span>
-          </div>
+        <!-- Page 2: Details & Recommendations -->
+        <div class="section-header">Architecture & Implementation</div>
+        <div class="option-box">
+          <div class="option-desc">${recommendation.architecture}</div>
         </div>
 
-        <!-- KEY BENEFITS -->
         <div class="section-header">Key Benefits</div>
         <ul class="benefits-list">
           ${recommendation.keyBenefits.map(benefit => `<li>${benefit}</li>`).join('')}
         </ul>
 
-        <!-- COST CONSIDERATIONS -->
-        <div class="section-header">Cost Considerations</div>
-        <div class="compact-text" style="margin-bottom: 0.1in;">
-          ${recommendation.costConsiderations}
-        </div>
-
-        <!-- NEXT STEPS -->
         <div class="section-header">Next Steps</div>
         <ul class="benefits-list">
           ${recommendation.nextSteps.map(step => `<li>${step}</li>`).join('')}
         </ul>
 
-        <!-- FOOTER -->
+        <div class="contact-box">
+          <div class="contact-label">Microsoft Accelerator @ OCI</div>
+          <div style="font-size: 11px; font-weight: 600; margin-top: 3px;">Contact: Pavan.srirangam@oracle.com</div>
+          <div style="font-size: 10px; margin-top: 3px;">For licensing optimization, cost analysis, and migration planning support</div>
+        </div>
+
+        <div class="disclaimer">
+          <strong style="font-size: 11px;">Important Disclaimer:</strong><br>
+          This assessment provides recommendations based on the information provided. Alternative solutions may exist beyond these recommendations. Please reach out to the Microsoft Accelerator @ OCI team for more informed decisions and to explore all available options for your specific requirements.
+        </div>
+
         <div class="footer">
-          <div class="contact-box">
-            <span class="contact-label">Microsoft Accelerator @ OCI:</span><br>
-            Pavan.srirangam@oracle.com
-          </div>
-          <div class="disclaimer">
-            <div class="disclaimer-title">DISCLAIMER</div>
-            <p>This assessment provides recommendations based on the information provided. Alternative solutions may exist. For more informed decision-making and licensing optimization, please contact the Microsoft Accelerator @ OCI team. This report is confidential and intended for internal use only.</p>
-          </div>
+          <strong>Confidential - For Internal Use Only</strong><br>
+          This assessment is confidential and intended for authorized Oracle personnel only. © Oracle Corporation 2026.
         </div>
       </div>
     </body>
     </html>
   `;
 
-  // Use html2pdf or similar library to generate PDF
-  const element = document.createElement('div');
-  element.innerHTML = htmlContent;
-  
-  // For now, we'll use a simpler approach - open in new window for printing
+  // Convert HTML to PDF using print functionality
   const printWindow = window.open('', '', 'width=800,height=600');
   if (printWindow) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    printWindow.print();
+    printWindow.focus();
+    
+    // Wait for content to load then print
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   }
-}
-
-export function isValidOracleEmail(email: string): boolean {
-  return email.toLowerCase().endsWith('@oracle.com');
 }
