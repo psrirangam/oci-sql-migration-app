@@ -24,7 +24,7 @@ export default function RecommendationView() {
     }
   }, [result, answers, recommendation]);
 
-  const complexityColor = {
+  const complexityColor: Record<string, string> = {
     Low: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     Medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
     High: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
@@ -139,7 +139,7 @@ export default function RecommendationView() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2">
-            {recommendation.keyBenefits.map((benefit, index) => (
+            {recommendation.keyBenefits.map((benefit: string, index: number) => (
               <li key={index} className="flex items-start gap-3 text-sm">
                 <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                 <span className="text-foreground">{benefit}</span>
@@ -156,7 +156,7 @@ export default function RecommendationView() {
         </CardHeader>
         <CardContent>
           <ol className="space-y-3">
-            {recommendation.nextSteps.map((step, index) => (
+            {recommendation.nextSteps.map((step: string, index: number) => (
               <li key={index} className="flex gap-3 text-sm">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
                   {index + 1}

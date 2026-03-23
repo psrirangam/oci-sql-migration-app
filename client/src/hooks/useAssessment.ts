@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
-import { AssessmentAnswers, AssessmentResult, generateRecommendation, QUESTIONS } from "@/lib/assessmentLogic";
+import { AssessmentAnswers, generateRecommendation, QUESTIONS } from "@/lib/assessmentLogic";
 
 export function useAssessment() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
-  const [result, setResult] = useState<AssessmentResult | null>(null);
+  const [result, setResult] = useState<any>(null);
 
   const currentQuestion = QUESTIONS[currentQuestionIndex];
   const totalQuestions = QUESTIONS.length;
@@ -46,15 +46,15 @@ export function useAssessment() {
     const completeAnswers: AssessmentAnswers = {
       customerName: (answers.customerName as string) || "Not provided",
       customerEmail: (answers.customerEmail as string) || "Not provided",
-      numInstances: (answers.numInstances as number) || 0,
-      currentlyRunning: (answers.currentlyRunning as string) || "no",
+      numInstances: (answers.numInstances as string) || "0",
+      currentlyRunning: (answers.currentlyRunning as "yes" | "no") || "no",
       currentVersion: (answers.currentVersion as string) || "2019",
       currentEdition: (answers.currentEdition as string) || "standard",
       currentDeployment: (answers.currentDeployment as string) || "on-premises",
-      currentDeploymentType: (answers.currentDeploymentType as string) || "iaas",
-      licensePurchaseDate: (answers.licensePurchaseDate as string) || "unsure",
-      currentLicensingModel: (answers.currentLicensingModel as string) || "per-core",
-      softwareAssurance: (answers.softwareAssurance as string) || "no",
+      currentDeploymentType: (answers.currentDeploymentType as "paas" | "iaas") || "iaas",
+      licensePurchaseDate: (answers.licensePurchaseDate as "before-oct-2019" | "after-oct-2019") || "after-oct-2019",
+      currentLicensingModel: (answers.currentLicensingModel as "per-core" | "server-cal") || "per-core",
+      softwareAssurance: (answers.softwareAssurance as "yes" | "no") || "no",
       targetVersion: (answers.targetVersion as string) || "2022",
       targetEdition: (answers.targetEdition as string) || "standard",
       hadrRequirements: (answers.hadrRequirements as string) || "no-hadr",

@@ -29,7 +29,7 @@ export function convertAssessmentToRecord(
     timestamp: new Date().toISOString(),
     customerName: answers.customerName || "Not provided",
     customerEmail: answers.customerEmail || "Not provided",
-    numInstances: answers.numInstances || 0,
+    numInstances: parseInt(answers.numInstances as string) || 0,
     currentVersion: answers.currentVersion || "Unknown",
     currentEdition: answers.currentEdition || "Unknown",
     currentDeployment: answers.currentDeployment || "Unknown",
