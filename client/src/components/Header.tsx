@@ -1,7 +1,9 @@
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Header() {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
   
   return (
     <header className="bg-white dark:bg-card border-b-2 border-primary shadow-md">
@@ -45,6 +47,18 @@ export default function Header() {
             >
               Assessment
             </button>
+            {user?.role === "admin" && (
+              <button
+                onClick={() => setLocation("/admin")}
+                className={`text-sm font-semibold transition-all duration-200 ${
+                  location === "/admin"
+                    ? "text-primary border-b-2 border-primary pb-1"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Admin
+              </button>
+            )}
           </div>
         </div>
       </div>
