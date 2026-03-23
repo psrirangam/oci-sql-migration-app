@@ -26,7 +26,13 @@
 - [ ] Test static build locally
 - [ ] Prepare for OCI Object Storage upload
 
-## Phase 5: Final Testing & Delivery
+## Phase 5: Remove Manus Branding
+- [x] Remove "Built with Manus" references from footer
+- [x] Remove Manus logos and branding
+- [x] Update copyright and attribution
+- [x] Verify no Manus references remain
+
+## Phase 6: Final Testing & Delivery
 - [ ] Test questionnaire flow
 - [ ] Test admin login
 - [ ] Test assessment export
