@@ -1,9 +1,15 @@
 import { useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Header() {
   const [location, setLocation] = useLocation();
-  const { user } = useAuth();
+  
+  const adminSession = localStorage.getItem("adminSession");
+  const isAdminLoggedIn = adminSession ? JSON.parse(adminSession).loggedIn : false;
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminSession");
+    setLocation("/");
+  };
   
   return (
     <header className="bg-white dark:bg-card border-b-2 border-primary shadow-md">
@@ -47,16 +53,35 @@ export default function Header() {
             >
               Assessment
             </button>
-            {user?.role === "admin" && (
+            {isAdminLoggedIn ? (
+              <>
+                <button
+                  onClick={() => setLocation("/admin")}
+                  className={`text-sm font-semibold transition-all duration-200 ${
+                    location === "/admin"
+                      ? "text-primary border-b-2 border-primary pb-1"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Admin
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
               <button
-                onClick={() => setLocation("/admin")}
+                onClick={() => setLocation("/admin-login")}
                 className={`text-sm font-semibold transition-all duration-200 ${
-                  location === "/admin"
+                  location === "/admin-login"
                     ? "text-primary border-b-2 border-primary pb-1"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Admin
+                Admin Login
               </button>
             )}
           </div>

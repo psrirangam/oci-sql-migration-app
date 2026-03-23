@@ -1,31 +1,67 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { trpc } from "@/lib/trpc";
-import { Download, Filter, RefreshCw } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Download, Filter, RefreshCw, LogOut } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 
+interface AssessmentRecord {
+  id: string;
+  timestamp: string;
+  customerName: string;
+  customerEmail: string;
+  numInstances: number;
+  currentVersion: string;
+  currentEdition: string;
+  currentDeployment: string;
+  currentDeploymentType: string;
+  licensingModel: string;
+  softwareAssurance: string;
+  purchaseDate: string;
+  targetVersion: string;
+  targetEdition: string;
+  hadrRequirements: string;
+  migrationApproach: string;
+  licensingOption: string;
+  recommendedInstances: string;
+  deploymentModel: string;
+  recommendationSummary: string;
+}
+
 export default function AdminDashboard() {
-  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRecommendation, setFilterRecommendation] = useState("");
+  const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect non-admins
-  if (user && user.role !== "admin") {
-    setLocation("/");
-    return null;
-  }
+  // Check admin session
+  useEffect(() => {
+    const adminSession = localStorage.getItem("adminSession");
+    const isAdminLoggedIn = adminSession ? JSON.parse(adminSession).loggedIn : false;
+    
+    if (!isAdminLoggedIn) {
+      setLocation("/admin-login");
+      return;
+    }
 
-  const { data: assessments, isLoading, refetch } = trpc.assessment.getAll.useQuery();
+    // Load assessments from localStorage
+    const storedAssessments = localStorage.getItem("assessmentRecords");
+    if (storedAssessments) {
+      try {
+        const parsed = JSON.parse(storedAssessments);
+        setAssessments(Array.isArray(parsed) ? parsed : []);
+      } catch (error) {
+        console.error("Failed to parse assessments:", error);
+        setAssessments([]);
+      }
+    }
+    setIsLoading(false);
+  }, [setLocation]);
 
   // Filter and search assessments
   const filteredAssessments = useMemo(() => {
-    if (!assessments) return [];
-
-    return assessments.filter((assessment: any) => {
+    return assessments.filter((assessment) => {
       const matchesSearch =
         assessment.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -69,7 +105,7 @@ export default function AdminDashboard() {
 
     const csvContent = [
       headers.join(","),
-      ...filteredAssessments.map((assessment: any) =>
+      ...filteredAssessments.map((assessment) =>
         [
           assessment.timestamp || "",
           `"${assessment.customerName || ""}"`,
@@ -78,9 +114,9 @@ export default function AdminDashboard() {
           assessment.currentVersion || "",
           assessment.currentEdition || "",
           assessment.currentDeployment || "",
-          assessment.deploymentType || "",
-          assessment.licensePurchaseDate || "",
-          assessment.currentLicensingModel || "",
+          assessment.currentDeploymentType || "",
+          assessment.purchaseDate || "",
+          assessment.licensingModel || "",
           assessment.softwareAssurance || "",
           assessment.targetVersion || "",
           assessment.targetEdition || "",
@@ -105,7 +141,7 @@ export default function AdminDashboard() {
     document.body.removeChild(a);
   };
 
-  // Export to Excel (using CSV format with .xlsx extension for compatibility)
+  // Export to Excel
   const handleExportExcel = () => {
     if (!filteredAssessments.length) {
       alert("No assessments to export");
@@ -136,7 +172,7 @@ export default function AdminDashboard() {
 
     const csvContent = [
       headers.join("\t"),
-      ...filteredAssessments.map((assessment: any) =>
+      ...filteredAssessments.map((assessment) =>
         [
           assessment.timestamp || "",
           assessment.customerName || "",
@@ -145,9 +181,9 @@ export default function AdminDashboard() {
           assessment.currentVersion || "",
           assessment.currentEdition || "",
           assessment.currentDeployment || "",
-          assessment.deploymentType || "",
-          assessment.licensePurchaseDate || "",
-          assessment.currentLicensingModel || "",
+          assessment.currentDeploymentType || "",
+          assessment.purchaseDate || "",
+          assessment.licensingModel || "",
           assessment.softwareAssurance || "",
           assessment.targetVersion || "",
           assessment.targetEdition || "",
@@ -172,15 +208,30 @@ export default function AdminDashboard() {
     document.body.removeChild(a);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("adminSession");
+    setLocation("/");
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Assessment Dashboard</h1>
-          <p className="text-muted-foreground">
-            View and manage all SQL Server migration assessments
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Assessment Dashboard</h1>
+            <p className="text-muted-foreground">
+              View and manage all SQL Server migration assessments
+            </p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -215,8 +266,8 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-sm font-medium">
-                {assessments?.[0]?.createdAt
-                  ? new Date(assessments[0].createdAt).toLocaleDateString()
+                {assessments?.[0]?.timestamp
+                  ? new Date(assessments[0].timestamp).toLocaleDateString()
                   : "N/A"}
               </div>
             </CardContent>
@@ -260,7 +311,7 @@ export default function AdminDashboard() {
 
             <div className="flex gap-3 flex-wrap">
               <Button
-                onClick={() => refetch()}
+                onClick={() => window.location.reload()}
                 variant="outline"
                 className="gap-2"
               >
@@ -328,14 +379,14 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAssessments.map((assessment: any, index: number) => (
+                    {filteredAssessments.map((assessment, index) => (
                       <tr
                         key={index}
                         className="border-b border-border hover:bg-muted/50 transition-colors"
                       >
                         <td className="py-3 px-4 text-muted-foreground">
-                          {assessment.createdAt
-                            ? new Date(assessment.createdAt).toLocaleDateString()
+                          {assessment.timestamp
+                            ? new Date(assessment.timestamp).toLocaleDateString()
                             : "N/A"}
                         </td>
                         <td className="py-3 px-4 font-medium text-foreground">

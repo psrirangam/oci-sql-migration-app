@@ -1,20 +1,25 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, Link } from "wouter";
+import { Route, Switch } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Showcase from "./pages/Showcase";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 
 function Router() {
   const { user } = useAuth();
+  const adminSession = localStorage.getItem("adminSession");
+  const isAdminLoggedIn = adminSession ? JSON.parse(adminSession).loggedIn : false;
+  
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin-login"} component={AdminLogin} />
+      <Route path={"/admin"} component={() => isAdminLoggedIn ? <AdminDashboard /> : <AdminLogin />} />
       <Route path={"/showcase"} component={Showcase} />
       <Route path={"/assessment"} component={Home} />
       <Route path={"/"} component={Showcase} />
