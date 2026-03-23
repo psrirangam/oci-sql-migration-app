@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, Check } from "lucide-react";
 import { useState } from "react";
 import { isValidOracleEmail } from "@/lib/csvExport";
 
@@ -94,8 +94,8 @@ export default function QuestionnaireView() {
       </div>
 
       {/* Question Card */}
-      <Card className="question-card mb-8 animate-in fade-in duration-300">
-        <CardHeader>
+      <Card className="question-card mb-8 animate-in fade-in duration-300 border-2 border-primary/20">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
           <CardTitle className="text-2xl">{currentQuestion.question}</CardTitle>
           {currentQuestion.type === "number" && (
             <CardDescription>
@@ -113,27 +113,48 @@ export default function QuestionnaireView() {
             </CardDescription>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {currentQuestion.type === "radio" && currentQuestion.options ? (
             <RadioGroup value={String(currentAnswer || "")} onValueChange={handleInputChange}>
-              <div className="space-y-4">
-                {currentQuestion.options.map((option) => (
-                  <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer">
-                    <RadioGroupItem
-                      value={option.value}
-                      id={`option-${option.value}`}
-                      className="mt-1"
-                    />
-                    <Label
-                      htmlFor={`option-${option.value}`}
-                      className="flex-1 cursor-pointer font-normal"
+              <div className="space-y-3">
+                {currentQuestion.options.map((option) => {
+                  const isSelected = String(currentAnswer) === option.value;
+                  return (
+                    <div
+                      key={option.value}
+                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-primary bg-primary/10 shadow-md"
+                          : "border-border bg-card hover:border-primary/50 hover:bg-secondary/30"
+                      }`}
                     >
-                      <span className="block font-medium text-foreground">
-                        {option.label}
-                      </span>
-                    </Label>
-                  </div>
-                ))}
+                      <div className="flex-shrink-0 mt-1">
+                        <RadioGroupItem
+                          value={option.value}
+                          id={`option-${option.value}`}
+                          className="w-5 h-5"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label
+                          htmlFor={`option-${option.value}`}
+                          className="flex-1 cursor-pointer font-normal"
+                        >
+                          <span className="block font-semibold text-foreground text-base">
+                            {option.label}
+                          </span>
+                        </Label>
+                      </div>
+                      {isSelected && (
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white">
+                            <Check className="w-3 h-3" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </RadioGroup>
           ) : (isTextInput || isEmailInput || isNumberInput) ? (
@@ -143,7 +164,7 @@ export default function QuestionnaireView() {
                 placeholder={isEmailInput ? "your.name@oracle.com" : isNumberInput ? "Enter a number" : "Enter your response"}
                 value={String(currentAnswer || "")}
                 onChange={(e) => handleInputChange(e.target.value)}
-                className="text-base py-3"
+                className="text-base py-3 border-2 focus:border-primary"
               />
               {isEmailInput && emailError && (
                 <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -163,7 +184,7 @@ export default function QuestionnaireView() {
           disabled={currentQuestionIndex === 0}
           variant="outline"
           size="lg"
-          className="gap-2"
+          className="gap-2 border-2"
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
@@ -173,7 +194,7 @@ export default function QuestionnaireView() {
           onClick={() => handleNextClick()}
           disabled={!canProceedToNext() || (isEmailInput && emailError !== "")}
           size="lg"
-          className="gap-2 bg-primary hover:bg-primary/90"
+          className="gap-2 bg-primary hover:bg-red-700 text-white font-bold shadow-lg"
         >
           {isLastQuestion && canProceedToNext() ? (
             <>
@@ -190,9 +211,9 @@ export default function QuestionnaireView() {
       </div>
 
       {/* Tip Section */}
-      <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-          <strong>💡 Tip:</strong> Your answers are based on the SQL Server 2022 Licensing Guide. Select options that best match your current or planned deployment scenario.
+      <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          <strong>💡 Tip:</strong> Your answers are based on the SQL Server 2022 Licensing Guide. Select the option that best matches your current or planned deployment scenario. Selected options are highlighted in red.
         </p>
       </div>
     </div>
