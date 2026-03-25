@@ -29,12 +29,14 @@ const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
 
 class OAuthService {
+  private isStandaloneMode: boolean;
+
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
+    this.isStandaloneMode = !ENV.oAuthServerUrl;
+    if (this.isStandaloneMode) {
+      console.log("[OAuth] ⚠️  STANDALONE MODE: OAuth not configured. Running in guest mode.");
+    } else {
+      console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
     }
   }
 
@@ -257,6 +259,38 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
+    // Check if running in standalone mode (no OAuth)
+    const isStandalone = !ENV.oAuthServerUrl;
+    if (isStandalone) {
+      // Auto-login as guest user in standalone mode
+      const guestOpenId = "local-guest-user";
+      let user = await db.getUserByOpenId(guestOpenId);
+      
+      if (!user) {
+        // Create guest user on first access
+        await db.upsertUser({
+          openId: guestOpenId,
+          name: "Guest User",
+          email: "guest@localhost",
+          loginMethod: "standalone",
+          lastSignedIn: new Date(),
+        });
+        user = await db.getUserByOpenId(guestOpenId);
+      } else {
+        // Update last signed in
+        await db.upsertUser({
+          openId: guestOpenId,
+          lastSignedIn: new Date(),
+        });
+      }
+      
+      if (!user) {
+        throw ForbiddenError("Failed to create guest user");
+      }
+      
+      return user;
+    }
+
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
