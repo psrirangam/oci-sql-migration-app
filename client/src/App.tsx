@@ -22,6 +22,7 @@ function Router() {
       <main className="flex-1">
         <Switch>
           <Route path={"/admin-login"} component={AdminLogin} />
+          <Route path={"/admin/dashboard"} component={() => <AdminDashboard />} />
           <Route path={"/admin"} component={() => isAdminLoggedIn ? <AdminDashboard /> : <AdminLogin />} />
           <Route path={"/showcase"} component={Showcase} />
           <Route path={"/assessment"} component={Home} />

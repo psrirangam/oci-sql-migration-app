@@ -42,3 +42,14 @@
 - [ ] Test assessment export
 - [ ] Test PDF download
 - [ ] Verify all features work without backend
+
+
+## Phase 7: Admin Dashboard with Analytics
+- [ ] Remove CSV export feature from assessment components
+- [ ] Create admin dashboard route (/admin/dashboard)
+- [ ] Add analytics charts (total assessments, deployment model distribution, complexity breakdown)
+- [ ] Create assessment history list view with filtering and search
+- [ ] Add PDF report tracking and download functionality
+- [ ] Implement role-based access control for admin features
+- [ ] Add assessment detail view with all answers and recommendations
+- [ ] Create export functionality for analytics data

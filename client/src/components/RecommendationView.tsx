@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Zap, Target, Download, FileText } from "lucide-react";
 import { useEffect } from "react";
-import { convertAssessmentToRecord, saveRecordToLocalStorage } from "@/lib/csvExport";
+import { convertAssessmentToRecord, saveRecordToLocalStorage } from "@/lib/assessmentStorage";
 import { generatePDF } from "@/lib/pdfExport";
 
 export default function RecommendationView() {
@@ -16,7 +16,7 @@ export default function RecommendationView() {
 
   const { recommendation, summary, estimatedComplexity } = result;
 
-  // Save assessment record to localStorage when result is generated
+  // Save assessment record to localStorage for admin dashboard
   useEffect(() => {
     if (result && answers) {
       const record = convertAssessmentToRecord(answers as any, recommendation);
@@ -188,7 +188,7 @@ export default function RecommendationView() {
             Download Report (PDF)
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            This PDF includes your complete assessment details, customer information, and OCI recommendations.
+            Your assessment has been saved and is available in the admin dashboard for tracking and analytics.
           </p>
         </CardContent>
       </Card>
