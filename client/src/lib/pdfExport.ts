@@ -317,7 +317,9 @@ export function generatePDF(answers: AssessmentAnswers, result: AssessmentResult
 
         <div class="footer">
           <strong>Confidential - For Internal Use Only</strong><br>
-          This assessment is confidential and intended for authorized Oracle personnel only. © Oracle Corporation 2026.
+          This assessment is confidential and intended for authorized Oracle personnel only. © Oracle Corporation 2026.<br><br>
+          <strong>Designed and Built by:</strong> Pavan Srirangam (pavan.srirangam@oracle.com)<br>
+          For feature requests or to report issues, please contact: pavan.srirangam@oracle.com
         </div>
       </div>
     </body>

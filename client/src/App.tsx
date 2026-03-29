@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Showcase from "./pages/Showcase";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -17,16 +18,21 @@ function Router() {
   
   // make sure to consider if you need authentication for certain routes
   return (
-    <Switch>
-      <Route path={"/admin-login"} component={AdminLogin} />
-      <Route path={"/admin"} component={() => isAdminLoggedIn ? <AdminDashboard /> : <AdminLogin />} />
-      <Route path={"/showcase"} component={Showcase} />
-      <Route path={"/assessment"} component={Home} />
-      <Route path={"/"} component={Showcase} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-1">
+        <Switch>
+          <Route path={"/admin-login"} component={AdminLogin} />
+          <Route path={"/admin"} component={() => isAdminLoggedIn ? <AdminDashboard /> : <AdminLogin />} />
+          <Route path={"/showcase"} component={Showcase} />
+          <Route path={"/assessment"} component={Home} />
+          <Route path={"/"} component={Showcase} />
+          <Route path={"/404"} component={NotFound} />
+          {/* Final fallback route */}
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+      <Footer />
+    </div>
   );
 }
 
