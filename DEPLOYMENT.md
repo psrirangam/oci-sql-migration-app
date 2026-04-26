@@ -185,7 +185,7 @@ The recommendation engine analyzes user answers and provides:
 
 - **Deployment Model**: Bare Metal, VM.Standard.E4.Flex, VM.Optimized3.Flex
 - **Licensing Option**: BYOL with License Mobility, BYOL with SA, License Included
-- **Architecture**: Single instance, Failover Cluster, AlwaysOn AG (single AD), AlwaysOn AG (multi-region)
+- **Architecture**: Single instance, Failover Cluster (recommended for Standard Edition), Failover Cluster with multi-region replication (cost-effective DR)
 - **Cost Considerations**: High-level cost implications
 - **Key Benefits**: Specific advantages of the recommended path
 - **Next Steps**: Actionable implementation steps
@@ -194,7 +194,7 @@ The recommendation engine analyzes user answers and provides:
 
 The questionnaire incorporates key insights from the SQL Server 2022 Licensing Guide:
 
-- **Passive Failover Rights**: With SA, passive replicas don't require additional licensing
+- **Failover Clustering**: Cost-effective high availability for SQL Server Standard Edition without additional licensing requirements
 - **License Mobility**: Allows reassignment of licenses within server farm more than once every 90 days
 - **Flexible Virtualization Benefit**: Enables deployment on shared OCI infrastructure
 - **Unlimited Virtualization**: Enterprise Edition with SA supports unlimited VMs on licensed physical cores

@@ -50,10 +50,10 @@ export function generateRecommendation(answers: AssessmentAnswers): { recommenda
   // Set deployment model and architecture
   if (answers.hadrRequirements === "disaster-recovery") {
     recommendation.deploymentModel = "OCI Compute with Multi-Region Deployment";
-    recommendation.architecture = "Active-Passive with cross-region failover using Always On Availability Groups";
+    recommendation.architecture = "Active-Passive with cross-region failover using Failover Clustering (cost-effective for Standard Edition)";
   } else if (answers.hadrRequirements === "high-availability") {
     recommendation.deploymentModel = "OCI Compute with Multi-AD Deployment";
-    recommendation.architecture = "Active-Active with Always On Availability Groups across availability domains";
+    recommendation.architecture = "Active-Passive with Failover Clustering across availability domains (recommended for SQL Server Standard Edition to reduce licensing costs)";
   } else {
     recommendation.deploymentModel = "OCI Compute (Single or Multi-AD)";
     recommendation.architecture = "Standard deployment with optional backup/recovery";
