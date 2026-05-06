@@ -1,0 +1,8 @@
+
+> oci-sql-migration-app@1.0.0 start
+> NODE_ENV=production node dist/index.js
+
+[OAuth] Initialized with baseURL: 
+[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable.
+Port 3000 is busy, using port 3002 instead
+Server running on http://localhost:3002/
