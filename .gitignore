@@ -1,5 +1,7 @@
 .env
 node_modules/
 dist/
+artifacts/
+data/
 .DS_Store
 *.log

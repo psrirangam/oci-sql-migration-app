@@ -4,14 +4,18 @@ export interface AssessmentRecord {
   timestamp: string;
   customerName: string;
   customerEmail: string;
+  sourcePlatform: string;
+  workloadType: string;
   numInstances: number;
+  totalVcpu: string;
+  totalStorageTb: string;
   currentVersion: string;
   currentEdition: string;
-  currentDeployment: string;
   deploymentType: string;
   licensePurchaseDate: string;
   currentLicensingModel: string;
   softwareAssurance: string;
+  windowsLicensing: string;
   targetVersion: string;
   targetEdition: string;
   hadrRequirements: string;
@@ -29,14 +33,18 @@ export function convertAssessmentToRecord(
     timestamp: new Date().toISOString(),
     customerName: answers.customerName || "Not provided",
     customerEmail: answers.customerEmail || "Not provided",
+    sourcePlatform: answers.sourcePlatform || "Unknown",
+    workloadType: answers.workloadType || "Unknown",
     numInstances: parseInt(answers.numInstances as string) || 0,
+    totalVcpu: answers.totalVcpu || "Unknown",
+    totalStorageTb: answers.totalStorageTb || "Unknown",
     currentVersion: answers.currentVersion || "Unknown",
     currentEdition: answers.currentEdition || "Unknown",
-    currentDeployment: answers.currentDeployment || "Unknown",
     deploymentType: answers.currentDeploymentType || "Unknown",
     licensePurchaseDate: answers.licensePurchaseDate || "Unknown",
     currentLicensingModel: answers.currentLicensingModel || "Unknown",
     softwareAssurance: answers.softwareAssurance || "Unknown",
+    windowsLicensing: answers.windowsLicensing || "Unknown",
     targetVersion: answers.targetVersion || "Unknown",
     targetEdition: answers.targetEdition || "Unknown",
     hadrRequirements: answers.hadrRequirements || "Unknown",
@@ -52,14 +60,18 @@ export function recordToCSVRow(record: AssessmentRecord): string {
     escapeCSVValue(record.timestamp),
     escapeCSVValue(record.customerName),
     escapeCSVValue(record.customerEmail),
+    escapeCSVValue(record.sourcePlatform),
+    escapeCSVValue(record.workloadType),
     record.numInstances.toString(),
+    escapeCSVValue(record.totalVcpu),
+    escapeCSVValue(record.totalStorageTb),
     escapeCSVValue(record.currentVersion),
     escapeCSVValue(record.currentEdition),
-    escapeCSVValue(record.currentDeployment),
     escapeCSVValue(record.deploymentType),
     escapeCSVValue(record.licensePurchaseDate),
     escapeCSVValue(record.currentLicensingModel),
     escapeCSVValue(record.softwareAssurance),
+    escapeCSVValue(record.windowsLicensing),
     escapeCSVValue(record.targetVersion),
     escapeCSVValue(record.targetEdition),
     escapeCSVValue(record.hadrRequirements),
@@ -76,14 +88,18 @@ export function getCSVHeaders(): string {
     "Timestamp",
     "Customer Name",
     "Customer Email",
+    "Source Platform",
+    "Workload Type",
     "Number of Instances",
+    "Estimated Total vCPU",
+    "Estimated Storage TB",
     "Current Version",
     "Current Edition",
-    "Current Deployment",
     "Deployment Type (PaaS/IaaS)",
     "License Purchase Date",
     "Current Licensing Model",
     "Software Assurance",
+    "Windows Licensing",
     "Target Version",
     "Target Edition",
     "HA/DR Requirements",

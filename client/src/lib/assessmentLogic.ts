@@ -1,19 +1,23 @@
 export interface AssessmentAnswers {
   customerName: string;
   customerEmail: string;
+  sourcePlatform: "on-premises" | "azure" | "aws" | "other";
+  workloadType: "windows-sql" | "sql-only" | "windows-only";
   numInstances: string;
+  totalVcpu?: string;
+  totalStorageTb?: string;
   currentlyRunning: "yes" | "no";
   currentVersion?: string;
   currentEdition?: string;
-  currentDeployment?: string;
-  currentDeploymentType?: "paas" | "iaas";
-  licensePurchaseDate?: "before-oct-2019" | "after-oct-2019";
-  currentLicensingModel?: "per-core" | "server-cal";
-  softwareAssurance?: "yes" | "no";
+  currentDeploymentType?: "physical" | "virtualized" | "iaas" | "paas";
+  licensePurchaseDate?: "before-oct-2019" | "after-oct-2019" | "unknown";
+  currentLicensingModel?: "per-core" | "server-cal" | "license-included" | "unknown";
+  softwareAssurance?: "yes" | "no" | "unknown";
+  windowsLicensing?: "oci-included" | "byol" | "unknown";
   targetVersion?: string;
   targetEdition?: string;
-  hadrRequirements?: string;
-  migrationApproach?: string;
+  hadrRequirements?: "none" | "high-availability" | "disaster-recovery";
+  migrationApproach?: "lift-shift" | "replatform" | "modernize";
 }
 
 export interface Recommendation {
@@ -29,411 +33,461 @@ export interface Recommendation {
   marketplaceLinks?: string[];
 }
 
-const marketplaceBaseUrl = "https://marketplace.oracle.com/listings?query=SQL+server";
+export interface Question {
+  id: keyof AssessmentAnswers;
+  category: string;
+  question: string;
+  helper?: string;
+  type: "radio" | "text" | "email" | "number";
+  options?: Array<{ value: string; label: string }>;
+  getOptions?: (answers: Partial<AssessmentAnswers>) => Array<{ value: string; label: string }>;
+  conditional?: (answers: Partial<AssessmentAnswers>) => boolean;
+}
 
-export function generateRecommendation(answers: AssessmentAnswers): { recommendation: Recommendation; summary: string; estimatedComplexity: string } {
+const marketplaceBaseUrl = "https://cloudmarketplace.oracle.com/marketplace/en_US/homePage.jspx?tag=SQL+Server";
+
+const labels: Record<string, string> = {
+  "on-premises": "On-premises data center",
+  azure: "Microsoft Azure",
+  aws: "Amazon Web Services",
+  other: "Other environment",
+  "windows-sql": "Windows Server and SQL Server",
+  "sql-only": "SQL Server only",
+  "windows-only": "Windows Server only",
+  physical: "Physical servers",
+  virtualized: "VMware, Hyper-V, or other virtualization",
+  iaas: "Cloud IaaS virtual machines",
+  paas: "Managed database/PaaS",
+  "before-oct-2019": "Before October 1, 2019",
+  "after-oct-2019": "On or after October 1, 2019",
+  unknown: "Unknown",
+  "per-core": "SQL Server Per Core",
+  "server-cal": "SQL Server Server + CAL",
+  "license-included": "Cloud provider license included",
+  yes: "Yes",
+  no: "No",
+  "oci-included": "Use OCI Windows Server license included",
+  byol: "Bring Windows Server licenses",
+  enterprise: "Enterprise Edition",
+  standard: "Standard Edition",
+  developer: "Developer Edition",
+  "sql-2022": "SQL Server 2022",
+  "sql-2019": "SQL Server 2019",
+  "sql-2016-or-older": "SQL Server 2016 or older",
+  none: "Single instance / backup and restore",
+  "high-availability": "High availability within an OCI region",
+  "disaster-recovery": "Cross-region disaster recovery",
+  "lift-shift": "Lift and shift",
+  replatform: "Re-platform on OCI Compute",
+  modernize: "Modernize to Oracle Database, PostgreSQL, or MySQL HeatWave",
+};
+
+function label(value?: string): string {
+  if (!value) return "Not provided";
+  return labels[value] ?? value;
+}
+
+function needsSql(answers: AssessmentAnswers): boolean {
+  return answers.workloadType !== "windows-only";
+}
+
+function needsWindows(answers: AssessmentAnswers): boolean {
+  return answers.workloadType !== "sql-only";
+}
+
+function estimateComplexity(answers: AssessmentAnswers): "Low" | "Medium" | "High" {
+  const instanceCount = Number.parseInt(answers.numInstances, 10) || 0;
+  if (answers.hadrRequirements === "disaster-recovery" || instanceCount > 25 || answers.migrationApproach === "modernize") {
+    return "High";
+  }
+  if (answers.hadrRequirements === "high-availability" || instanceCount > 5 || answers.sourcePlatform !== "on-premises") {
+    return "Medium";
+  }
+  return "Low";
+}
+
+function getDeploymentModel(answers: AssessmentAnswers): string {
+  if (answers.hadrRequirements === "disaster-recovery") {
+    return "OCI Compute across two OCI regions";
+  }
+  if (answers.hadrRequirements === "high-availability") {
+    return "OCI Compute across multiple availability domains or fault domains";
+  }
+  if (answers.currentDeploymentType === "physical" || answers.totalVcpu && Number.parseInt(answers.totalVcpu, 10) > 64) {
+    return "OCI Compute, with Bare Metal evaluation for large or consolidated hosts";
+  }
+  return "OCI Compute VM.Standard flexible shapes, with VM.Optimized3.Flex evaluation for latency-sensitive workloads";
+}
+
+function getArchitecture(answers: AssessmentAnswers): string {
+  if (!needsSql(answers)) {
+    return "Migrate Windows Server workloads to OCI Compute with OCI Block Volumes, image-based migration where suitable, and native OCI backup policies.";
+  }
+  if (answers.hadrRequirements === "disaster-recovery") {
+    return "Use SQL Server on OCI Compute with Always On Availability Groups or failover clustering for local HA, plus cross-region replication and a documented DR runbook.";
+  }
+  if (answers.hadrRequirements === "high-availability") {
+    return answers.targetEdition === "standard"
+      ? "Use SQL Server failover clustering for instance-level HA, or Basic Availability Groups only when the workload fits Standard Edition limits."
+      : "Use SQL Server Always On Availability Groups or failover clustering across OCI fault domains or availability domains.";
+  }
+  return "Use a right-sized Windows Server VM on OCI Compute with SQL Server installed from a marketplace image or customer image, backed by OCI Block Volumes and scheduled backups.";
+}
+
+function getLicensing(answers: AssessmentAnswers): { option: string; details: string } {
+  if (!needsSql(answers)) {
+    return {
+      option: answers.windowsLicensing === "byol" ? "Windows Server BYOL validation required" : "OCI Windows Server license included",
+      details:
+        "For Windows-only workloads, keep the first deployment path simple: use OCI Windows Server license-included images unless the customer has validated BYOL rights under current Microsoft Product Terms and Flexible Virtualization Benefit rules.",
+    };
+  }
+
+  const hasSA = answers.softwareAssurance === "yes";
+  const grandfathered = answers.licensePurchaseDate === "before-oct-2019";
+  const sourceLicenseIncluded = answers.currentLicensingModel === "license-included";
+
+  if (sourceLicenseIncluded) {
+    return {
+      option: "OCI SQL Server license included",
+      details:
+        "The current cloud deployment appears to use license-included SQL Server. Recommend OCI Marketplace SQL Server license-included images unless the account team validates separate SQL Server entitlements. Confirm marketplace image billing terms, including the SQL Server minimum billing period.",
+    };
+  }
+
+  if (grandfathered || hasSA) {
+    return {
+      option: "BYOL candidate, validate license mobility and Software Assurance",
+      details:
+        "Existing SQL Server licenses may be usable on OCI only after validating Microsoft Product Terms, Software Assurance or subscription status, License Mobility or Flexible Virtualization Benefit eligibility, edition, core counts, and passive failover rights before final sizing.",
+    };
+  }
+
+  return {
+    option: "OCI SQL Server license included or new SQL Server licensing",
+    details:
+      "No clear BYOL entitlement was provided. Use OCI Marketplace SQL Server license-included images for the simplest path, or engage licensing support before recommending a new BYOL purchase.",
+  };
+}
+
+function getInstances(answers: AssessmentAnswers): string[] {
+  const totalVcpu = Number.parseInt(answers.totalVcpu || "0", 10);
+  const storageTb = Number.parseFloat(answers.totalStorageTb || "0");
+  const instances = [];
+
+  if (answers.targetEdition === "enterprise" || totalVcpu > 48) {
+    instances.push("VM.Optimized3.Flex for latency-sensitive SQL Server workloads");
+    instances.push("BM.Standard.E5 or BM.Standard.E6 for large consolidated hosts, license isolation, or very high throughput");
+  } else {
+    instances.push("VM.Standard.E5.Flex or VM.Standard.E6.Flex for general Windows and SQL Server workloads");
+    instances.push("VM.Optimized3.Flex for latency-sensitive SQL Server databases");
+  }
+
+  if (storageTb >= 5) {
+    instances.push("OCI Block Volume with performance-based VPUs; evaluate striped volumes for high IOPS databases");
+  } else {
+    instances.push("OCI Block Volume with scheduled backups and performance tuned after workload profiling");
+  }
+
+  return instances;
+}
+
+export function generateRecommendation(
+  answers: AssessmentAnswers
+): { recommendation: Recommendation; summary: string; estimatedComplexity: "Low" | "Medium" | "High" } {
+  const licensing = getLicensing(answers);
   const recommendation: Recommendation = {
-    deploymentModel: "OCI Compute (IaaS)",
-    licensingOption: "",
-    licensingDetails: "",
-    architecture: "",
-    costConsiderations: "",
-    complianceNotes: "",
+    deploymentModel: getDeploymentModel(answers),
+    licensingOption: licensing.option,
+    licensingDetails: licensing.details,
+    architecture: getArchitecture(answers),
+    costConsiderations:
+      "Primary cost drivers are Windows and SQL Server licensing model, OCI OCPU sizing, HA/DR topology, block volume performance tier, backup retention, and data transfer during migration. For x86 compute, one OCI OCPU maps to two hardware execution threads, so validate source vCPU-to-OCPU sizing before estimating license and compute cost. SQL Server license-included marketplace images can also carry minimum billing terms.",
+    complianceNotes:
+      "This tool is for Oracle internal migration planning. Validate Microsoft licensing, Software Assurance, License Mobility, and passive failover terms with the appropriate licensing specialist before giving final commercial guidance.",
     keyBenefits: [],
     nextSteps: [],
+    recommendedInstances: getInstances(answers),
+    marketplaceLinks: needsSql(answers) ? [`OCI Marketplace SQL Server Images: ${marketplaceBaseUrl}`] : [],
   };
 
-  // Determine if licenses are grandfathered (purchased before Oct 1, 2019)
-  const isGrandfathered = answers.licensePurchaseDate === "before-oct-2019";
-  const hasSA = answers.softwareAssurance === "yes";
-
-  // Set deployment model and architecture
-  if (answers.hadrRequirements === "disaster-recovery") {
-    recommendation.deploymentModel = "OCI Compute with Multi-Region Deployment";
-    recommendation.architecture = "Active-Passive with cross-region failover using Failover Clustering (cost-effective for Standard Edition)";
-  } else if (answers.hadrRequirements === "high-availability") {
-    recommendation.deploymentModel = "OCI Compute with Multi-AD Deployment";
-    recommendation.architecture = "Active-Passive with Failover Clustering across availability domains (recommended for SQL Server Standard Edition to reduce licensing costs)";
+  if (answers.sourcePlatform === "on-premises") {
+    recommendation.keyBenefits.push("Moves Windows and SQL Server estate from data center capacity planning to OCI flexible compute and storage");
   } else {
-    recommendation.deploymentModel = "OCI Compute (Single or Multi-AD)";
-    recommendation.architecture = "Standard deployment with optional backup/recovery";
+    recommendation.keyBenefits.push(`Creates a clear migration path from ${label(answers.sourcePlatform)} to OCI with licensing review up front`);
   }
 
-  // Recommended instance types based on edition
-  const recommendedInstances: string[] = [];
-  if (answers.targetEdition === "enterprise") {
-    recommendedInstances.push("VM.Optimized.E5.Flex (2-4 GB memory per vCPU) - For critical workloads");
-    recommendedInstances.push("BM.Standard.E5 or BM.Standard.E6 (Bare Metal) - For maximum performance");
-  } else if (answers.targetEdition === "standard") {
-    recommendedInstances.push("VM.Standard.E5.Flex (1 GB memory per vCPU) - For general-purpose workloads");
-    recommendedInstances.push("VM.Optimized.E5.Flex (2 GB memory per vCPU) - For memory-intensive workloads");
-  } else {
-    recommendedInstances.push("VM.Standard.E5.Flex (1 GB memory per vCPU) - For development/testing");
-  }
-  recommendation.recommendedInstances = recommendedInstances;
-
-  // Licensing logic based on current state
-  if (answers.currentlyRunning === "no") {
-    // New deployment - no existing licenses
-    recommendation.licensingOption = "License Included (OCI Marketplace) or BYOL with New Licenses";
-    recommendation.licensingDetails = `For new workloads without existing SQL Server licenses, you have two main options:
-
-**Option 1: License Included (Recommended for Simplicity)**
-- Use pre-built SQL Server images from OCI Marketplace
-- SQL Server licensing included in hourly rate
-- Includes Microsoft support and updates
-- Fastest deployment path
-- Simplified compliance
-- No license procurement needed
-- Best for: Quick deployment, standard configurations
-
-**Option 2: BYOL with New Licenses (If Purchasing New Licenses)**
-If you're purchasing new SQL Server licenses:
-
-**Path 1: BYOL + Windows Server (Manual SQL Installation)**
-- Deploy base Windows Server VM (BYOL)
-- Manually install SQL Server with your new licenses
-- Full control over configuration
-- Requires more setup time
-- Best for: Custom configurations with specific requirements
-
-**Path 2: BYOL + Custom Image (Cognosys)**
-- Use Cognosys pre-built SQL Server images with your BYOL licenses
-- Faster than manual installation
-- Pre-configured and tested
-- Best for: Faster deployment with BYOL
-
-**Next Steps:** Contact Microsoft Accelerator @ OCI (Pavan.srirangam@oracle.com) for new license pricing and licensing optimization.`;
-  } else if (answers.currentlyRunning === "yes") {
-    // Existing deployment
-    if (isGrandfathered && hasSA) {
-      recommendation.licensingOption = "BYOL with Existing Licenses (Grandfathered)";
-      recommendation.licensingDetails = `Your SQL Server licenses purchased before October 1, 2019 are grandfathered and can be used on OCI.
-
-**Recommended Path: BYOL + Bring Existing Licenses**
-- Leverage your current SQL Server licenses on OCI
-- Bring your existing SQL Server images or build new ones
-- Full license mobility rights
-- No additional licensing costs
-- Compliance with Microsoft licensing terms
-
-**Deployment Options:**
-
-**Option 1: Bring Existing SQL Server Images**
-- Migrate your current SQL Server instances to OCI VMs
-- Minimal reconfiguration needed
-- Fastest migration path
-- Maintains current configuration
-
-**Option 2: Build New SQL Server on OCI VMs**
-- Deploy Windows Server (BYOL) on OCI
-- Install SQL Server with your existing licenses
-- Opportunity to optimize for cloud
-- Better performance potential
-
-**Next Steps:** Contact Microsoft Accelerator @ OCI (Pavan.srirangam@oracle.com) to validate your license grandfathering status and optimize your migration approach.`;
-    } else if (isGrandfathered && !hasSA) {
-      recommendation.licensingOption = "BYOL with Existing Licenses (Limited Mobility)";
-      recommendation.licensingDetails = `Your SQL Server licenses are grandfathered but without Software Assurance, mobility rights are limited.
-
-**Recommended Path: BYOL with Existing Licenses**
-- Use your current SQL Server licenses on OCI
-- Requires validation of license mobility eligibility
-- Bring existing SQL Server images or build new ones
-
-**Deployment Options:**
-
-**Option 1: Bring Existing SQL Server Images**
-- Migrate current instances to OCI VMs
-- Minimal reconfiguration
-- Fastest deployment
-
-**Option 2: Build New SQL Server on OCI VMs**
-- Deploy Windows Server (BYOL) on OCI
-- Install SQL Server with your licenses
-- Optimize for cloud deployment
-
-**Important:** Without Software Assurance, license mobility may be restricted. Verify your specific licensing terms.
-
-**Next Steps:** Contact Microsoft Accelerator @ OCI (Pavan.srirangam@oracle.com) to validate your license mobility rights and determine the best deployment approach.`;
-    } else {
-      recommendation.licensingOption = "License Included (Recommended) or Purchase New BYOL Licenses";
-      recommendation.licensingDetails = `Your current SQL Server licenses do not qualify for grandfathering or BYOL on OCI. You have two options:
-
-**Option 1: License Included (Recommended)**
-- Use pre-built SQL Server images from OCI Marketplace
-- SQL Server licensing included in hourly rate
-- No additional license procurement needed
-- Simplified compliance and support
-- Best for: Cost-effective, simplified licensing
-
-**Option 2: Purchase New BYOL Licenses**
-If you prefer to purchase new licenses:
-
-**Path 1: BYOL + Windows Server (Manual Installation)**
-- Deploy Windows Server VM (BYOL)
-- Manually install SQL Server with new licenses
-- Full control over configuration
-- Requires more setup time
-
-**Path 2: BYOL + Custom Image (Cognosys)**
-- Use pre-built SQL Server images with new BYOL licenses
-- Faster deployment than manual installation
-- Pre-configured and tested
-
-**Next Steps:** Contact Microsoft Accelerator @ OCI (Pavan.srirangam@oracle.com) for new license pricing and to determine the most cost-effective licensing approach for your migration.`;
-    }
-  }
-
-  // Migration approach recommendations
-  const migrationLabel = answers.migrationApproach === "lift-shift" ? "Lift and Shift" : answers.migrationApproach === "replatform" ? "Re-platform" : "Re-factor";
-  
   if (answers.migrationApproach === "lift-shift") {
-    recommendation.keyBenefits.push("Minimal application changes required");
-    recommendation.keyBenefits.push("Fastest time to production");
-    recommendation.keyBenefits.push("Lower risk migration approach");
+    recommendation.keyBenefits.push("Fastest path with minimal application change");
   } else if (answers.migrationApproach === "replatform") {
-    recommendation.keyBenefits.push("Optimized for cloud deployment");
-    recommendation.keyBenefits.push("Better performance and scalability");
-    recommendation.keyBenefits.push("Reduced operational overhead");
-  } else if (answers.migrationApproach === "refactor") {
-    recommendation.keyBenefits.push("Modernize to Oracle databases");
-    recommendation.keyBenefits.push("Better long-term cost optimization");
-    recommendation.keyBenefits.push("Access to Oracle ecosystem benefits");
+    recommendation.keyBenefits.push("Opportunity to rebuild on current Windows and SQL Server versions while preserving application behavior");
+  } else {
+    recommendation.keyBenefits.push("Creates a modernization path where SQL Server dependency reduction is part of the business case");
   }
 
-  recommendation.costConsiderations = `**Cost Factors:**
-- Compute instance sizing and type
-- SQL Server licensing model (License Included vs BYOL)
-- Storage requirements
-- Data transfer costs
-- Backup and disaster recovery infrastructure
-- High availability and multi-region deployment costs`;
-
-  recommendation.complianceNotes = `**Compliance & Support:**
-- OCI provides enterprise-grade security and compliance certifications
-- Microsoft Accelerator @ OCI team provides licensing validation
-- Full audit trail and compliance reporting available
-- Contact: Pavan.srirangam@oracle.com for licensing questions`;
+  if (needsWindows(answers)) {
+    recommendation.keyBenefits.push("Windows Server deployment can use standard OCI images and operational patterns");
+  }
+  if (needsSql(answers)) {
+    recommendation.keyBenefits.push("SQL Server sizing, HA, and licensing choices are captured before architecture design");
+  }
 
   recommendation.nextSteps = [
-    "Validate current SQL Server licenses with Microsoft Accelerator @ OCI",
-    "Determine optimal instance types for your workload",
-    "Plan migration timeline and approach",
-    "Configure backup and disaster recovery strategy",
-    "Prepare for deployment on OCI",
+    "Export this assessment and attach it to the opportunity or migration planning record",
+    "Collect source utilization: vCPU, memory, storage, IOPS, SQL edition, and HA topology",
+    "Validate SQL Server and Windows Server licensing posture with Oracle/Microsoft licensing support",
+    "Map source network, identity, backup, and monitoring dependencies before migration wave planning",
+    "Create a target OCI landing zone design with subnet, security list/NSG, backup, and DR decisions",
   ];
 
-  recommendation.marketplaceLinks = [
-    `OCI Marketplace SQL Server Images: ${marketplaceBaseUrl}`,
-  ];
+  const summary = `Assessment Summary
 
-  const summary = `**Assessment Summary**
+Customer: ${answers.customerName}
+Oracle contact: ${answers.customerEmail}
+Source: ${label(answers.sourcePlatform)}
+Workload: ${label(answers.workloadType)}
+Instances: ${answers.numInstances}
+Estimated vCPU: ${answers.totalVcpu || "Not provided"}
+Estimated storage: ${answers.totalStorageTb ? `${answers.totalStorageTb} TB` : "Not provided"}
 
-**Customer:** ${answers.customerName}
-**Email:** ${answers.customerEmail}
-**Instances to Migrate:** ${answers.numInstances}
+Current State:
+- Running today: ${label(answers.currentlyRunning)}
+- Deployment type: ${label(answers.currentDeploymentType)}
+- SQL version: ${label(answers.currentVersion)}
+- SQL edition: ${label(answers.currentEdition)}
+- SQL licensing model: ${label(answers.currentLicensingModel)}
+- Software Assurance: ${label(answers.softwareAssurance)}
 
-**Current State:**
-- Running SQL Server: ${answers.currentlyRunning === "yes" ? "Yes" : "No"}
-${answers.currentlyRunning === "yes" ? `- Version: ${answers.currentVersion}` : ""}
-${answers.currentlyRunning === "yes" ? `- Edition: ${answers.currentEdition}` : ""}
-${answers.currentlyRunning === "yes" ? `- Deployment: ${answers.currentDeployment}` : ""}
-${answers.currentlyRunning === "yes" && answers.currentDeploymentType ? `- Deployment Type: ${answers.currentDeploymentType === "paas" ? "PaaS" : "IaaS"}` : ""}
+Target:
+- SQL target version: ${label(answers.targetVersion)}
+- SQL target edition: ${label(answers.targetEdition)}
+- HA/DR requirement: ${label(answers.hadrRequirements)}
+- Migration approach: ${label(answers.migrationApproach)}
 
-**Target Deployment:**
-- Target Edition: ${answers.targetEdition}
-- Migration Approach: ${migrationLabel}
-- HA/DR Requirements: ${answers.hadrRequirements}
-
-**Recommended Deployment Model:** ${recommendation.deploymentModel}
-**Recommended Architecture:** ${recommendation.architecture}
-**Licensing Option:** ${recommendation.licensingOption}
-
-**Recommended Instance Types:**
-${recommendation.recommendedInstances?.map((instance) => `- ${instance}`).join("\n")}
-
-**Key Benefits:**
-${recommendation.keyBenefits.map((benefit) => `- ${benefit}`).join("\n")}
-
-**Next Steps:**
-${recommendation.nextSteps.map((step) => `- ${step}`).join("\n")}`;
-
-  const estimatedComplexity =
-    answers.hadrRequirements === "disaster-recovery"
-      ? "High"
-      : answers.hadrRequirements === "high-availability"
-        ? "Medium-High"
-        : "Medium";
+Recommendation:
+- Deployment model: ${recommendation.deploymentModel}
+- Architecture: ${recommendation.architecture}
+- Licensing option: ${recommendation.licensingOption}`;
 
   return {
     recommendation,
     summary,
-    estimatedComplexity,
+    estimatedComplexity: estimateComplexity(answers),
   };
-}
-
-export interface Question {
-  id: string;
-  category: string;
-  question: string;
-  type: "radio" | "text" | "email" | "number";
-  options?: Array<{ value: string; label: string }>;
-  getOptions?: (answers: AssessmentAnswers) => Array<{ value: string; label: string }>;
-  conditional?: { field: keyof AssessmentAnswers; value: string };
 }
 
 export const QUESTIONS: Question[] = [
   {
     id: "customerName",
-    category: "Customer Information",
-    question: "What's the customer name looking to migrate SQL server to OCI?",
+    category: "Opportunity",
+    question: "Customer or project name",
+    helper: "Use the customer name, internal project name, or migration wave label.",
     type: "text",
-    options: [],
   },
   {
     id: "customerEmail",
-    category: "Customer Information",
-    question: "What is your email address? (We will use this to reach back with recommendations)",
+    category: "Opportunity",
+    question: "Oracle owner email",
+    helper: "Use your Oracle email so the exported report has a clear internal owner.",
     type: "email",
-    options: [],
+  },
+  {
+    id: "sourcePlatform",
+    category: "Source Environment",
+    question: "Where is the workload running today?",
+    type: "radio",
+    options: [
+      { value: "on-premises", label: "On-premises data center" },
+      { value: "azure", label: "Microsoft Azure" },
+      { value: "aws", label: "Amazon Web Services" },
+      { value: "other", label: "Other hosting provider" },
+    ],
+  },
+  {
+    id: "workloadType",
+    category: "Source Environment",
+    question: "What workload are you assessing?",
+    type: "radio",
+    options: [
+      { value: "windows-sql", label: "Windows Server with SQL Server" },
+      { value: "sql-only", label: "SQL Server migration only" },
+      { value: "windows-only", label: "Windows Server migration only" },
+    ],
   },
   {
     id: "numInstances",
-    category: "Customer Information",
-    question: "How many SQL Server instances are you planning to migrate to OCI?",
+    category: "Estate Size",
+    question: "How many servers or SQL Server instances are in scope?",
     type: "number",
-    options: [],
+    helper: "Use the initial migration wave count if the total estate is not known.",
   },
-
-  // Current State Section
+  {
+    id: "totalVcpu",
+    category: "Estate Size",
+    question: "Estimated total vCPU in scope",
+    type: "number",
+    helper: "This can be an estimate. It helps identify when Bare Metal should be evaluated.",
+  },
+  {
+    id: "totalStorageTb",
+    category: "Estate Size",
+    question: "Estimated database or server storage in TB",
+    type: "number",
+    helper: "Use usable storage, not raw SAN capacity.",
+  },
   {
     id: "currentlyRunning",
     category: "Current State",
-    question: "Are you currently running SQL Server?",
+    question: "Is this workload already running in production?",
     type: "radio",
     options: [
-      { value: "yes", label: "Yes, we have SQL Server running" },
-      { value: "no", label: "No, this is a new deployment" },
-    ],
-  },
-  {
-    id: "currentVersion",
-    category: "Current State",
-    question: "What version of SQL Server are you currently running?",
-    type: "radio",
-    conditional: { field: "currentlyRunning", value: "yes" },
-    options: [
-      { value: "2008", label: "SQL Server 2008 or 2008 R2" },
-      { value: "2012", label: "SQL Server 2012" },
-      { value: "2014", label: "SQL Server 2014" },
-      { value: "2016", label: "SQL Server 2016" },
-      { value: "2017", label: "SQL Server 2017" },
-      { value: "2019", label: "SQL Server 2019" },
-      { value: "2022", label: "SQL Server 2022" },
-    ],
-  },
-  {
-    id: "currentEdition",
-    category: "Current State",
-    question: "What edition of SQL Server are you currently running?",
-    type: "radio",
-    conditional: { field: "currentlyRunning", value: "yes" },
-    options: [
-      { value: "enterprise", label: "Enterprise Edition" },
-      { value: "standard", label: "Standard Edition" },
-      { value: "developer", label: "Developer Edition" },
-    ],
-  },
-  {
-    id: "currentDeployment",
-    category: "Current State",
-    question: "Where is SQL Server currently deployed?",
-    type: "radio",
-    conditional: { field: "currentlyRunning", value: "yes" },
-    options: [
-      { value: "on-premises", label: "On-Premises (Data Center)" },
-      { value: "aws", label: "Amazon Web Services (AWS)" },
-      { value: "azure", label: "Microsoft Azure" },
-      { value: "gcp", label: "Google Cloud Platform (GCP)" },
-      { value: "other", label: "Other Cloud Provider" },
+      { value: "yes", label: "Yes, production or active non-production workload" },
+      { value: "no", label: "No, this is a new OCI deployment" },
     ],
   },
   {
     id: "currentDeploymentType",
     category: "Current State",
-    question: "Is your current SQL Server deployment PaaS or IaaS?",
+    question: "Which source deployment model best matches the workload?",
     type: "radio",
-    conditional: { field: "currentDeployment", value: "cloud" },
+    conditional: (answers) => answers.currentlyRunning === "yes",
+    getOptions: (answers) => {
+      if (answers.sourcePlatform === "on-premises") {
+        return [
+          { value: "physical", label: "Physical servers" },
+          { value: "virtualized", label: "VMware, Hyper-V, or another virtualization platform" },
+        ];
+      }
+      return [
+        { value: "iaas", label: "IaaS virtual machines" },
+        { value: "paas", label: "Managed database/PaaS service" },
+      ];
+    },
+  },
+  {
+    id: "currentVersion",
+    category: "SQL Server",
+    question: "What SQL Server version is running today?",
+    type: "radio",
+    conditional: (answers) => answers.currentlyRunning === "yes" && answers.workloadType !== "windows-only",
     options: [
-      { value: "paas", label: "PaaS (Azure SQL Database, AWS RDS, etc.)" },
-      { value: "iaas", label: "IaaS (EC2, Virtual Machines, etc.)" },
+      { value: "sql-2022", label: "SQL Server 2022" },
+      { value: "sql-2019", label: "SQL Server 2019" },
+      { value: "sql-2016-or-older", label: "SQL Server 2016 or older" },
+      { value: "unknown", label: "Unknown or mixed versions" },
+    ],
+  },
+  {
+    id: "currentEdition",
+    category: "SQL Server",
+    question: "What SQL Server edition is in scope?",
+    type: "radio",
+    conditional: (answers) => answers.workloadType !== "windows-only",
+    options: [
+      { value: "enterprise", label: "Enterprise Edition" },
+      { value: "standard", label: "Standard Edition" },
+      { value: "developer", label: "Developer Edition or non-production only" },
+      { value: "unknown", label: "Unknown or mixed editions" },
+    ],
+  },
+  {
+    id: "currentLicensingModel",
+    category: "Licensing",
+    question: "What SQL Server licensing model is used today?",
+    type: "radio",
+    conditional: (answers) => answers.workloadType !== "windows-only",
+    options: [
+      { value: "per-core", label: "Per Core licenses" },
+      { value: "server-cal", label: "Server + CAL licenses" },
+      { value: "license-included", label: "License included by Azure, AWS, or another provider" },
+      { value: "unknown", label: "Unknown" },
     ],
   },
   {
     id: "licensePurchaseDate",
-    category: "Current State",
-    question: "When were your SQL Server licenses purchased?",
+    category: "Licensing",
+    question: "When were the SQL Server licenses purchased?",
     type: "radio",
-    conditional: { field: "currentlyRunning", value: "yes" },
+    conditional: (answers) => answers.workloadType !== "windows-only" && answers.currentLicensingModel !== "license-included",
     options: [
-      { value: "before-oct-2019", label: "Before October 1, 2019 (Grandfathered)" },
-      { value: "after-oct-2019", label: "After October 1, 2019 (No grandfathering)" },
+      { value: "before-oct-2019", label: "Before October 1, 2019" },
+      { value: "after-oct-2019", label: "On or after October 1, 2019" },
+      { value: "unknown", label: "Unknown" },
     ],
   },
   {
     id: "softwareAssurance",
-    category: "Current State",
-    question: "Do you have Software Assurance (SA) on your SQL Server licenses?",
+    category: "Licensing",
+    question: "Do the SQL Server licenses have active Software Assurance?",
     type: "radio",
-    conditional: { field: "currentlyRunning", value: "yes" },
+    conditional: (answers) => answers.workloadType !== "windows-only" && answers.currentLicensingModel !== "license-included",
     options: [
-      { value: "yes", label: "Yes, we have Software Assurance" },
-      { value: "no", label: "No, we do not have Software Assurance" },
+      { value: "yes", label: "Yes" },
+      { value: "no", label: "No" },
+      { value: "unknown", label: "Unknown" },
     ],
   },
-
-  // Target Deployment Section
+  {
+    id: "windowsLicensing",
+    category: "Licensing",
+    question: "How should Windows Server licensing be handled on OCI?",
+    type: "radio",
+    conditional: (answers) => answers.workloadType !== "sql-only",
+    options: [
+      { value: "oci-included", label: "Use OCI Windows Server license-included images" },
+      { value: "byol", label: "Customer wants to bring Windows Server licenses" },
+      { value: "unknown", label: "Unknown, validate during planning" },
+    ],
+  },
+  {
+    id: "targetVersion",
+    category: "OCI Target",
+    question: "What SQL Server target version should OCI use?",
+    type: "radio",
+    conditional: (answers) => answers.workloadType !== "windows-only",
+    options: [
+      { value: "sql-2022", label: "SQL Server 2022" },
+      { value: "sql-2019", label: "SQL Server 2019" },
+      { value: "unknown", label: "Decide after compatibility review" },
+    ],
+  },
   {
     id: "targetEdition",
-    category: "Target Deployment",
-    question: "What edition of SQL Server do you want on OCI?",
+    category: "OCI Target",
+    question: "What SQL Server target edition is expected on OCI?",
     type: "radio",
+    conditional: (answers) => answers.workloadType !== "windows-only",
     options: [
       { value: "enterprise", label: "Enterprise Edition" },
       { value: "standard", label: "Standard Edition" },
-      { value: "developer", label: "Developer Edition" },
+      { value: "developer", label: "Developer Edition or non-production only" },
+      { value: "unknown", label: "Decide after sizing/licensing review" },
     ],
   },
   {
     id: "hadrRequirements",
-    category: "Target Deployment",
-    question: "What are your High Availability and Disaster Recovery requirements?",
+    category: "OCI Target",
+    question: "What availability target does the customer need?",
     type: "radio",
     options: [
-      { value: "none", label: "None - Single instance is acceptable" },
-      { value: "high-availability", label: "High Availability (HA) - Minimize downtime within region" },
-      { value: "disaster-recovery", label: "Disaster Recovery (DR) - Multi-region failover capability" },
+      { value: "none", label: "Single instance with backup and restore" },
+      { value: "high-availability", label: "High availability within one OCI region" },
+      { value: "disaster-recovery", label: "Cross-region disaster recovery" },
     ],
   },
   {
     id: "migrationApproach",
-    category: "Target Deployment",
-    question: "What is your preferred migration approach?",
+    category: "Migration Path",
+    question: "Which migration motion best fits this opportunity?",
     type: "radio",
-    getOptions: (answers: AssessmentAnswers) => {
+    getOptions: (answers) => {
       const options = [
-        { value: "lift-shift", label: "Lift and Shift (Minimal changes to SQL Server)" },
+        { value: "lift-shift", label: "Lift and shift existing Windows or SQL Server workloads" },
+        { value: "replatform", label: "Re-platform onto new OCI Windows and SQL Server builds" },
       ];
-
-      // Only show Re-platform if currently on PaaS
-      if (answers.currentDeploymentType === "paas") {
-        options.push({ value: "replatform", label: "Re-platform (Optimize for OCI cloud)" });
+      if (answers.workloadType !== "windows-only") {
+        options.push({ value: "modernize", label: "Modernize database tier to Oracle Database, PostgreSQL, or MySQL HeatWave" });
       }
-
-      // Always show Re-factor for Oracle databases
-      options.push({ value: "refactor", label: "Re-factor (Migrate to Oracle ATP, PostgreSQL, or MySQL Heatwave)" });
-
       return options;
     },
   },

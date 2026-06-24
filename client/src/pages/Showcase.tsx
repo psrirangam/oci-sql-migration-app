@@ -9,8 +9,8 @@ export default function Showcase() {
   const features = [
     {
       icon: <CheckCircle2 className="w-6 h-6 text-primary" />,
-      title: "SQL Server 2022 Compliant",
-      description: "Assessment based on official SQL Server 2022 Licensing Guide with October 1, 2019 licensing changes"
+      title: "Licensing-aware",
+      description: "Assessment rules reference current Microsoft Product Terms, SQL Server capabilities, and Oracle OCI guidance"
     },
     {
       icon: <Zap className="w-6 h-6 text-primary" />,
@@ -61,7 +61,7 @@ export default function Showcase() {
           </h2>
           <p className="text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
             Get personalized recommendations for migrating your SQL Server workloads to Oracle Cloud Infrastructure. 
-            Based on the official SQL Server 2022 Licensing Guide with support for legacy versions.
+            Built from deterministic planning rules with licensing validation checkpoints for production guidance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -115,7 +115,7 @@ export default function Showcase() {
           <div className="grid md:grid-cols-4 gap-4">
             {[
               { step: "1", title: "Answer Questions", desc: "Provide information about your current SQL Server setup and OCI requirements" },
-              { step: "2", title: "Analyze Licensing", desc: "We evaluate your licensing model, Software Assurance, and grandfathering status" },
+              { step: "2", title: "Analyze Licensing", desc: "We evaluate licensing model, Software Assurance, subscription status, and BYOL validation needs" },
               { step: "3", title: "Generate Report", desc: "Receive a comprehensive assessment with OCI instance recommendations" },
               { step: "4", title: "Next Steps", desc: "Get actionable recommendations for deployment, licensing, and migration" }
             ].map((item, idx) => (

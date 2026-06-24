@@ -4,37 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Lock } from "lucide-react";
-
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "msadmin";
+import { trpc } from "@/lib/trpc";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
+  const trpcUtils = trpc.useUtils();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const loginMutation = trpc.admin.login.useMutation();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
 
-    // Simulate login delay
-    setTimeout(() => {
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        // Store admin session in localStorage
-        localStorage.setItem("adminSession", JSON.stringify({
-          loggedIn: true,
-          timestamp: Date.now(),
-        }));
+    try {
+      const result = await loginMutation.mutateAsync({ username, password });
+      if (result.success) {
+        trpcUtils.admin.me.setData(undefined, { isAdmin: true });
         setLocation("/admin");
       } else {
-        setError("Invalid username or password");
+        setError(result.error);
       }
-      setIsLoading(false);
-    }, 500);
+    } catch {
+      setError("Admin login is not available. Check server configuration.");
+    }
   };
+
+  const isLoading = loginMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center p-4">

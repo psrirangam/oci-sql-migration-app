@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, AlertCircle, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, Check, Circle } from "lucide-react";
 import { useState } from "react";
 import { isValidOracleEmail } from "@/lib/csvExport";
 import { AssessmentAnswers } from "@/lib/assessmentLogic";
@@ -37,6 +36,18 @@ export default function QuestionnaireView() {
   const isNumberInput = currentQuestion.type === "number";
   const isTextInput = currentQuestion.type === "text";
   const isEmailInput = currentQuestion.type === "email";
+  const questionOptions = currentQuestion.getOptions ? currentQuestion.getOptions(answers as AssessmentAnswers) : currentQuestion.options || [];
+  const sectionNames = Array.from(new Set(visibleQuestions.map((question) => question.category)));
+  const activeSectionIndex = sectionNames.findIndex((section) => section === currentQuestion.category);
+  const helperText =
+    currentQuestion.helper ||
+    (isNumberInput
+      ? "Enter a numeric value for this field."
+      : isEmailInput
+        ? "Use an Oracle email address for internal ownership and follow-up."
+        : isTextInput
+          ? "Please provide your response."
+          : "");
 
   const handleInputChange = (value: string) => {
     if (isNumberInput) {
@@ -74,152 +85,160 @@ export default function QuestionnaireView() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Progress Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Question {visibleQuestionIndex + 1} of {visibleQuestions.length}
-            </h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              {currentQuestion.category}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">{progressPercentage}%</p>
-            <p className="text-xs text-muted-foreground">Complete</p>
-          </div>
+    <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="apex-side-region hidden lg:block">
+        <div className="border-b border-border bg-[#faf9f7] px-4 py-3">
+          <h3 className="text-sm font-semibold text-foreground">Assessment Sections</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{visibleQuestions.length} questions</p>
         </div>
-        <Progress value={progressPercentage} className="h-2" />
-      </div>
+        <div className="py-2">
+          {sectionNames.map((section, index) => {
+            const isActive = index === activeSectionIndex;
+            const isComplete = index < activeSectionIndex;
+            return (
+              <div
+                key={section}
+                className={`apex-step-row ${isActive ? "apex-step-row-active" : ""}`}
+              >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-white">
+                  {isComplete ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <Circle className={`h-3 w-3 ${isActive ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  )}
+                </div>
+                <div>
+                  <p className={`font-medium ${isActive ? "text-foreground" : ""}`}>{section}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {visibleQuestions.filter((question) => question.category === section).length} item(s)
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </aside>
 
-      {/* Question Card */}
-      <Card className="question-card mb-8 animate-in fade-in duration-300 border-2 border-primary/20">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-          <CardTitle className="text-2xl">{currentQuestion.question}</CardTitle>
-          {currentQuestion.type === "number" && (
-            <CardDescription>
-              Enter a numeric value for this field
-            </CardDescription>
-          )}
-          {currentQuestion.type === "email" && (
-            <CardDescription>
-              We will use this Oracle.com email to reach back with your assessment results
-            </CardDescription>
-          )}
-          {currentQuestion.type === "text" && (
-            <CardDescription>
-              Please provide your response
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent className="pt-6">
-          {currentQuestion.type === "radio" ? (
-            <RadioGroup value={String(currentAnswer || "")} onValueChange={handleInputChange}>
-              <div className="space-y-3">
-                {(() => {
-                  const options = currentQuestion.getOptions ? currentQuestion.getOptions(answers as AssessmentAnswers) : currentQuestion.options || [];
-                  return options.map((option) => {
+      <section className="space-y-4">
+        <div className="apex-region">
+          <div className="apex-region-header">
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                Question {visibleQuestionIndex + 1} of {visibleQuestions.length}
+              </p>
+              <h3 className="mt-1 text-sm font-semibold text-foreground">{currentQuestion.category}</h3>
+            </div>
+            <div className="min-w-28 text-right">
+              <p className="text-lg font-semibold text-primary">{progressPercentage}%</p>
+              <p className="text-xs text-muted-foreground">Complete</p>
+            </div>
+          </div>
+          <Progress value={progressPercentage} className="h-1 rounded-none" />
+          <div className="apex-region-body">
+            <div className="mb-5">
+              <h2 className="text-2xl font-semibold text-foreground md:text-[26px]">
+                {currentQuestion.question}
+              </h2>
+              {helperText && <p className="mt-2 text-sm text-muted-foreground">{helperText}</p>}
+            </div>
+
+            {currentQuestion.type === "radio" ? (
+              <RadioGroup value={String(currentAnswer || "")} onValueChange={handleInputChange}>
+                <div className="divide-y divide-border border border-border">
+                  {questionOptions.map((option) => {
                     const isSelected = String(currentAnswer) === option.value;
                     return (
-                    <div
-                      key={option.value}
-                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                        isSelected
-                          ? "border-primary bg-primary/10 shadow-md"
-                          : "border-border bg-card hover:border-primary/50 hover:bg-secondary/30"
-                      }`}
-                    >
-                      <div className="flex-shrink-0 mt-1">
-                        <RadioGroupItem
-                          value={option.value}
-                          id={`option-${option.value}`}
-                          className="w-5 h-5"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label
-                          htmlFor={`option-${option.value}`}
-                          className="flex-1 cursor-pointer font-normal"
-                        >
-                          <span className="block font-semibold text-foreground text-base">
-                            {option.label}
-                          </span>
-                        </Label>
-                      </div>
-                      {isSelected && (
-                        <div className="flex-shrink-0 mt-1">
-                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white">
-                            <Check className="w-3 h-3" />
-                          </div>
+                      <div
+                        key={option.value}
+                        className={`apex-choice cursor-pointer ${isSelected ? "apex-choice-selected" : ""}`}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          <RadioGroupItem
+                            value={option.value}
+                            id={`option-${option.value}`}
+                            className="h-4 w-4"
+                          />
                         </div>
-                      )}
-                    </div>
+                        <div className="flex-1">
+                          <Label
+                            htmlFor={`option-${option.value}`}
+                            className="cursor-pointer font-normal"
+                          >
+                            <span className="block text-sm font-medium text-foreground">
+                              {option.label}
+                            </span>
+                          </Label>
+                        </div>
+                        {isSelected && (
+                          <div className="shrink-0">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                              <Check className="h-3 w-3" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
-                  });
-                })()}
-              </div>
-            </RadioGroup>
-          ) : (isTextInput || isEmailInput || isNumberInput) ? (
-            <div className="space-y-3">
-              <Input
-                type={isEmailInput ? "email" : isNumberInput ? "number" : "text"}
-                placeholder={isEmailInput ? "your.name@oracle.com" : isNumberInput ? "Enter a number" : "Enter your response"}
-                value={String(currentAnswer || "")}
-                onChange={(e) => handleInputChange(e.target.value)}
-                className="text-base py-3 border-2 focus:border-primary"
-              />
-              {isEmailInput && emailError && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{emailError}</p>
+                  })}
                 </div>
+              </RadioGroup>
+            ) : (isTextInput || isEmailInput || isNumberInput) ? (
+              <div className="max-w-xl space-y-3">
+                <Input
+                  type={isEmailInput ? "email" : isNumberInput ? "number" : "text"}
+                  placeholder={isEmailInput ? "your.name@oracle.com" : isNumberInput ? "Enter a number" : "Enter your response"}
+                  value={String(currentAnswer || "")}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  className="h-10 rounded-sm border-border bg-white text-sm focus:border-primary"
+                />
+                {isEmailInput && emailError && (
+                  <div className="flex items-start gap-2 border border-destructive/30 bg-red-50 p-3 text-destructive">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p className="text-sm">{emailError}</p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="apex-region-footer">
+            <Button
+              onClick={() => handlePrevious()}
+              disabled={currentQuestionIndex === 0}
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+
+            <Button
+              onClick={() => handleNextClick()}
+              disabled={!canProceedToNext() || (isEmailInput && emailError !== "")}
+              size="sm"
+              className="gap-2 rounded-sm bg-primary font-semibold text-white hover:bg-[#a53a2a]"
+            >
+              {isLastQuestion && canProceedToNext() ? (
+                <>
+                  <span>Generate Recommendation</span>
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <span>Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </>
               )}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+            </Button>
+          </div>
+        </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex gap-3 justify-between">
-        <Button
-          onClick={() => handlePrevious()}
-          disabled={currentQuestionIndex === 0}
-          variant="outline"
-          size="lg"
-          className="gap-2 border-2"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Previous
-        </Button>
-
-        <Button
-          onClick={() => handleNextClick()}
-          disabled={!canProceedToNext() || (isEmailInput && emailError !== "")}
-          size="lg"
-          className="gap-2 bg-primary hover:bg-red-700 text-white font-bold shadow-lg"
-        >
-          {isLastQuestion && canProceedToNext() ? (
-            <>
-              <span>Generate Recommendation</span>
-              <ChevronRight className="w-4 h-4" />
-            </>
-          ) : (
-            <>
-              <span>Next</span>
-              <ChevronRight className="w-4 h-4" />
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Tip Section */}
-      <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>💡 Tip:</strong> Your answers are based on the SQL Server 2022 Licensing Guide. Select the option that best matches your current or planned deployment scenario. Selected options are highlighted in red.
-        </p>
-      </div>
+        <div className="apex-callout">
+          <p>
+            <strong>Planning note:</strong> Use the best information available now. The report guides OCI migration discovery and highlights licensing items to validate before final architecture or pricing.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

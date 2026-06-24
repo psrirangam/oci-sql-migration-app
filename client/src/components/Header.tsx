@@ -3,64 +3,76 @@ import { useLocation } from "wouter";
 export default function Header() {
   const [location, setLocation] = useLocation();
   
-  const adminSession = localStorage.getItem("adminSession");
-  const isAdminLoggedIn = adminSession ? JSON.parse(adminSession).loggedIn : false;
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminSession");
-    setLocation("/");
-  };
-  
   return (
-    <header className="bg-white dark:bg-card border-b-2 border-primary shadow-md">
-      <div className="container py-4 md:py-6">
-        <div className="flex items-center justify-between">
-          <div 
-            className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setLocation("/")}
-          >
-            {/* Oracle Red Logo Box */}
-            <div className="w-12 h-12 rounded-md bg-primary flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-xl">OCI</span>
+    <header>
+      <div className="apex-shell-header">
+        <div className="container py-2.5">
+          <div className="flex items-center justify-between">
+            <div
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => setLocation("/")}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-xs font-bold text-white">
+                OCI
+              </div>
+              <div>
+                <h1 className="text-base font-semibold text-white">
+                  OCI Migration Assessment
+                </h1>
+                <p className="text-xs text-white/70">
+                  Windows and SQL Server planning
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-                SQL Server Migration
-              </h1>
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                Oracle Cloud Infrastructure Assessment Tool
-              </p>
+            <div className="hidden items-center gap-2 text-xs text-white/70 md:flex">
+              <span className="rounded-sm border border-white/20 px-2 py-1">Internal</span>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <button
+        </div>
+      </div>
+      <div className="apex-toolbar">
+        <div className="container">
+          <div className="flex items-center justify-between">
+            <div
+              className="hidden items-center gap-3 py-2 text-xs text-muted-foreground md:flex"
               onClick={() => setLocation("/")}
-              className={`text-sm font-semibold transition-all duration-200 ${
-                location === "/" || location === "/showcase"
-                  ? "text-primary border-b-2 border-primary pb-1"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
             >
-              Overview
-            </button>
-            <button
-              onClick={() => setLocation("/assessment")}
-              className={`text-sm font-semibold transition-all duration-200 ${
-                location === "/assessment"
-                  ? "text-primary border-b-2 border-primary pb-1"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Assessment
-            </button>
-            {isAdminLoggedIn && (
+              <span>Applications</span>
+              <span>/</span>
+              <span className="font-medium text-foreground">SQL Assessment</span>
+            </div>
+            <div className="flex items-center gap-1">
               <button
-                onClick={handleLogout}
-                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setLocation("/showcase")}
+                className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+                  location === "/showcase"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
               >
-                Logout
+                Guide
               </button>
-            )}
+              <button
+                onClick={() => setLocation("/assessment")}
+                className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+                  location === "/" || location === "/assessment"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Assessment
+              </button>
+              <button
+                onClick={() => setLocation("/admin")}
+                className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+                  location.startsWith("/admin")
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Admin
+              </button>
+            </div>
           </div>
         </div>
       </div>

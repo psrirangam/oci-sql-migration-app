@@ -11,10 +11,10 @@ function HomeContent() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container py-8 md:py-12">
+      <main className="container py-5 md:py-6">
         {result ? (
           <>
             <RecommendationView />
@@ -38,7 +38,26 @@ function HomeContent() {
             </div>
           </>
         ) : (
-          <QuestionnaireView />
+          <div className="space-y-5">
+            <section className="apex-page-header">
+              <div className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Oracle Internal</span>
+                    <span>/</span>
+                    <span>Cloud Migration</span>
+                  </div>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    Windows and SQL Server Migration Assessment
+                  </h2>
+                  <p className="mt-1 max-w-4xl text-sm text-muted-foreground">
+                    Capture source platform, licensing posture, estate size, and target OCI availability model before architecture design.
+                  </p>
+                </div>
+              </div>
+            </section>
+            <QuestionnaireView />
+          </div>
         )}
       </main>
     </div>

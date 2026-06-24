@@ -2,13 +2,17 @@ import { useAssessmentContext } from "@/contexts/AssessmentContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Zap, Target, Download, FileText } from "lucide-react";
-import { useEffect } from "react";
+import { CheckCircle2, AlertCircle, Zap, Target, Download, FileText, ExternalLink } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { convertAssessmentToRecord, saveRecordToLocalStorage } from "@/lib/assessmentStorage";
 import { generatePDF } from "@/lib/pdfExport";
+import { RESOURCE_LINKS } from "@/lib/resourceLinks";
+import { trpc } from "@/lib/trpc";
 
 export default function RecommendationView() {
   const { result, answers } = useAssessmentContext();
+  const saveMutation = trpc.assessment.save.useMutation();
+  const hasSaved = useRef(false);
 
   if (!result) {
     return null;
@@ -18,11 +22,39 @@ export default function RecommendationView() {
 
   // Save assessment record to localStorage for admin dashboard
   useEffect(() => {
-    if (result && answers) {
+    if (result && answers && !hasSaved.current) {
+      hasSaved.current = true;
       const record = convertAssessmentToRecord(answers as any, recommendation);
       saveRecordToLocalStorage(record);
+      saveMutation.mutate({
+        customerName: record.customerName,
+        customerEmail: record.customerEmail,
+        sourcePlatform: record.sourcePlatform,
+        workloadType: record.workloadType,
+        numInstances: record.numInstances,
+        totalVcpu: record.totalVcpu,
+        totalStorageTb: record.totalStorageTb,
+        currentlyRunning: (answers as any).currentlyRunning,
+        currentVersion: record.currentVersion,
+        currentEdition: record.currentEdition,
+        currentDeploymentType: record.deploymentType,
+        currentLicensingModel: record.currentLicensingModel,
+        softwareAssurance: record.softwareAssurance,
+        windowsLicensing: record.windowsLicensing,
+        licensePurchaseDate: record.licensePurchaseDate,
+        targetVersion: record.targetVersion,
+        targetEdition: record.targetEdition,
+        hadrRequirements: record.hadrRequirements,
+        migrationApproach: record.migrationApproach,
+        deploymentModel: recommendation.deploymentModel,
+        licensingOption: recommendation.licensingOption,
+        recommendedInstances: recommendation.recommendedInstances?.join("; "),
+        recommendationSummary: summary,
+        answersJson: answers,
+        recommendationJson: recommendation,
+      });
     }
-  }, [result, answers, recommendation]);
+  }, [result, answers, recommendation, saveMutation, summary]);
 
   const complexityColor: Record<string, string> = {
     Low: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -35,19 +67,19 @@ export default function RecommendationView() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="mx-auto max-w-5xl space-y-5 animate-in fade-in duration-500">
       {/* Summary Section */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="apex-region-header">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Target className="w-5 h-5 text-primary" />
-            Your Personalized OCI Recommendation
+            OCI Recommendation
           </CardTitle>
-          <CardDescription>Based on your SQL Server 2022 licensing assessment</CardDescription>
+          <CardDescription>Generated from the migration assessment inputs</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs whitespace-pre-wrap break-words">
+            <pre className="overflow-x-auto border border-border bg-[#faf9f7] p-4 text-xs whitespace-pre-wrap break-words">
               {summary}
             </pre>
           </div>
@@ -57,8 +89,8 @@ export default function RecommendationView() {
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Deployment Model */}
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="apex-region gap-0 rounded-sm py-0">
+          <CardHeader className="border-b border-border bg-[#faf9f7] pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               Deployment Model
@@ -72,8 +104,8 @@ export default function RecommendationView() {
         </Card>
 
         {/* Licensing Option */}
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="apex-region gap-0 rounded-sm py-0">
+          <CardHeader className="border-b border-border bg-[#faf9f7] pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-primary" />
               Licensing Option
@@ -96,8 +128,8 @@ export default function RecommendationView() {
       </div>
 
       {/* Architecture */}
-      <Card>
-        <CardHeader>
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
           <CardTitle className="text-lg">Recommended Architecture</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -106,8 +138,8 @@ export default function RecommendationView() {
       </Card>
 
       {/* Licensing Details */}
-      <Card className="border-primary/20">
-        <CardHeader>
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
           <CardTitle className="text-lg">Licensing Details</CardTitle>
         </CardHeader>
         <CardContent>
@@ -118,8 +150,8 @@ export default function RecommendationView() {
       </Card>
 
       {/* Cost Considerations */}
-      <Card>
-        <CardHeader>
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
           <CardTitle className="text-lg">Cost Considerations</CardTitle>
         </CardHeader>
         <CardContent>
@@ -130,8 +162,8 @@ export default function RecommendationView() {
       </Card>
 
       {/* Key Benefits */}
-      <Card>
-        <CardHeader>
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
           <CardTitle className="text-lg flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             Key Benefits
@@ -150,8 +182,8 @@ export default function RecommendationView() {
       </Card>
 
       {/* Next Steps */}
-      <Card className="bg-secondary/30 border-secondary">
-        <CardHeader>
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
           <CardTitle className="text-lg">Recommended Next Steps</CardTitle>
         </CardHeader>
         <CardContent>
@@ -168,9 +200,39 @@ export default function RecommendationView() {
         </CardContent>
       </Card>
 
+      {/* Reference Links */}
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
+          <CardTitle className="text-lg">Reference Links</CardTitle>
+          <CardDescription>
+            OCI and Oracle internal references for licensing, deployment, HA/DR, identity, and marketplace images
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-2">
+            {RESOURCE_LINKS.map((link) => (
+              <a
+                key={link.url}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group block border border-border bg-white p-3 text-sm transition-colors hover:border-primary hover:bg-[#faf9f7]"
+              >
+                <div className="mb-1 flex items-start justify-between gap-3">
+                  <span className="font-semibold text-foreground">{link.title}</span>
+                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+                </div>
+                <p className="text-xs font-medium uppercase text-primary">{link.category}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{link.description}</p>
+              </a>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Download Report Section */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader>
+      <Card className="apex-region gap-0 rounded-sm py-0">
+        <CardHeader className="border-b border-border bg-[#faf9f7]">
           <CardTitle className="text-lg flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Download Assessment Report
@@ -182,23 +244,23 @@ export default function RecommendationView() {
         <CardContent>
           <Button 
             onClick={handleDownloadPDF}
-            className="w-full md:w-auto bg-primary hover:bg-red-700 text-white font-bold"
+            className="w-full rounded-sm bg-primary font-semibold text-white hover:bg-[#a53a2a] md:w-auto"
           >
             <Download className="w-4 h-4 mr-2" />
             Download Report (PDF)
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            Your assessment has been saved and is available in the admin dashboard for tracking and analytics.
+            Your assessment is saved for dashboard tracking. If OCI persistence is configured, it is stored in ATP and archived to Object Storage.
           </p>
         </CardContent>
       </Card>
 
       {/* Footer Note */}
-      <div className="p-4 bg-muted/50 rounded-lg border border-border text-xs text-muted-foreground space-y-2">
+      <div className="border border-border bg-white p-4 text-xs text-muted-foreground space-y-2">
         <p>
-          <strong>Important:</strong> This assessment is based on the SQL Server 2022 Licensing Guide 
-          and provides general guidance. For specific licensing decisions, please consult with your 
-          Microsoft licensing representative or Oracle Cloud sales team.
+          <strong>Important:</strong> This assessment applies deterministic planning rules from current Microsoft
+          Product Terms, SQL Server edition capabilities, and Oracle OCI guidance. For specific licensing
+          decisions, consult the Microsoft licensing representative or Oracle Cloud account team.
         </p>
         <p>
           <strong>OCI Resources:</strong> Visit the OCI documentation for detailed deployment guides,

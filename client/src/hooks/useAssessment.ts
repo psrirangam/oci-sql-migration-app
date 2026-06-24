@@ -1,23 +1,25 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { AssessmentAnswers, generateRecommendation, QUESTIONS } from "@/lib/assessmentLogic";
 
 export function useAssessment() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [result, setResult] = useState<any>(null);
 
-  const currentQuestion = QUESTIONS[currentQuestionIndex];
-  const totalQuestions = QUESTIONS.length;
-
-  // Filter visible questions based on conditional logic
-  const visibleQuestions = QUESTIONS.filter((q) => {
-    if (!q.conditional) return true;
-    const conditionField = q.conditional.field as keyof AssessmentAnswers;
-    return answers[conditionField] === q.conditional.value;
-  });
-
-  const visibleQuestionIndex = visibleQuestions.findIndex((q) => q.id === currentQuestion?.id);
+  const visibleQuestions = useMemo(
+    () => QUESTIONS.filter((q) => !q.conditional || q.conditional(answers)),
+    [answers]
+  );
+  const currentQuestion = visibleQuestions[currentVisibleIndex];
+  const totalQuestions = visibleQuestions.length;
+  const visibleQuestionIndex = currentVisibleIndex;
   const progressPercentage = Math.round(((visibleQuestionIndex + 1) / visibleQuestions.length) * 100);
+
+  useEffect(() => {
+    if (currentVisibleIndex >= visibleQuestions.length) {
+      setCurrentVisibleIndex(Math.max(visibleQuestions.length - 1, 0));
+    }
+  }, [currentVisibleIndex, visibleQuestions.length]);
 
   const handleAnswer = useCallback(
     (questionId: string, value: string | number) => {
@@ -30,35 +32,39 @@ export function useAssessment() {
   );
 
   const handleNext = useCallback(() => {
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+    if (currentVisibleIndex < totalQuestions - 1) {
+      setCurrentVisibleIndex((prev) => prev + 1);
     }
-  }, [currentQuestionIndex, totalQuestions]);
+  }, [currentVisibleIndex, totalQuestions]);
 
   const handlePrevious = useCallback(() => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+    if (currentVisibleIndex > 0) {
+      setCurrentVisibleIndex((prev) => prev - 1);
     }
-  }, [currentQuestionIndex]);
+  }, [currentVisibleIndex]);
 
   const handleSubmit = useCallback(() => {
     // Fill in default values for conditional questions that weren't asked
     const completeAnswers: AssessmentAnswers = {
       customerName: (answers.customerName as string) || "Not provided",
       customerEmail: (answers.customerEmail as string) || "Not provided",
-      numInstances: (answers.numInstances as string) || "0",
+      sourcePlatform: (answers.sourcePlatform as AssessmentAnswers["sourcePlatform"]) || "on-premises",
+      workloadType: (answers.workloadType as AssessmentAnswers["workloadType"]) || "windows-sql",
+      numInstances: String(answers.numInstances ?? "0"),
+      totalVcpu: answers.totalVcpu === undefined ? "" : String(answers.totalVcpu),
+      totalStorageTb: answers.totalStorageTb === undefined ? "" : String(answers.totalStorageTb),
       currentlyRunning: (answers.currentlyRunning as "yes" | "no") || "no",
-      currentVersion: (answers.currentVersion as string) || "2019",
+      currentVersion: (answers.currentVersion as string) || "unknown",
       currentEdition: (answers.currentEdition as string) || "standard",
-      currentDeployment: (answers.currentDeployment as string) || "on-premises",
-      currentDeploymentType: (answers.currentDeploymentType as "paas" | "iaas") || "iaas",
-      licensePurchaseDate: (answers.licensePurchaseDate as "before-oct-2019" | "after-oct-2019") || "after-oct-2019",
-      currentLicensingModel: (answers.currentLicensingModel as "per-core" | "server-cal") || "per-core",
-      softwareAssurance: (answers.softwareAssurance as "yes" | "no") || "no",
-      targetVersion: (answers.targetVersion as string) || "2022",
+      currentDeploymentType: (answers.currentDeploymentType as AssessmentAnswers["currentDeploymentType"]) || "iaas",
+      licensePurchaseDate: (answers.licensePurchaseDate as AssessmentAnswers["licensePurchaseDate"]) || "unknown",
+      currentLicensingModel: (answers.currentLicensingModel as AssessmentAnswers["currentLicensingModel"]) || "unknown",
+      softwareAssurance: (answers.softwareAssurance as AssessmentAnswers["softwareAssurance"]) || "unknown",
+      windowsLicensing: (answers.windowsLicensing as AssessmentAnswers["windowsLicensing"]) || "oci-included",
+      targetVersion: (answers.targetVersion as string) || "sql-2022",
       targetEdition: (answers.targetEdition as string) || "standard",
-      hadrRequirements: (answers.hadrRequirements as string) || "no-hadr",
-      migrationApproach: (answers.migrationApproach as string) || "lift-shift",
+      hadrRequirements: (answers.hadrRequirements as AssessmentAnswers["hadrRequirements"]) || "none",
+      migrationApproach: (answers.migrationApproach as AssessmentAnswers["migrationApproach"]) || "lift-shift",
     };
 
     const recommendation = generateRecommendation(completeAnswers);
@@ -66,7 +72,7 @@ export function useAssessment() {
   }, [answers]);
 
   const handleReset = useCallback(() => {
-    setCurrentQuestionIndex(0);
+    setCurrentVisibleIndex(0);
     setAnswers({});
     setResult(null);
   }, []);
@@ -79,7 +85,7 @@ export function useAssessment() {
 
   return {
     currentQuestion,
-    currentQuestionIndex,
+    currentQuestionIndex: currentVisibleIndex,
     totalQuestions,
     visibleQuestions,
     visibleQuestionIndex,
@@ -92,6 +98,6 @@ export function useAssessment() {
     handleSubmit,
     handleReset,
     canProceedToNext,
-    isLastQuestion: currentQuestionIndex === totalQuestions - 1,
+    isLastQuestion: currentVisibleIndex === totalQuestions - 1,
   };
 }

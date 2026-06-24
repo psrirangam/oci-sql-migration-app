@@ -43,46 +43,45 @@
 }
 
 :root {
-  /* Oracle Corporate Red and White Palette */
-  --primary: #F80000; /* Oracle Red */
+  /* Oracle Redwood / APEX-inspired internal app palette */
+  --primary: #c74634;
   --primary-foreground: #FFFFFF;
-  --sidebar-primary: #F80000; /* Oracle Red */
+  --sidebar-primary: #c74634;
   --sidebar-primary-foreground: #FFFFFF;
-  --accent: #FFFFFF; /* White accent */
-  --accent-foreground: #F80000;
+  --accent: #f4f1ed;
+  --accent-foreground: #312d2a;
   
   /* Chart colors */
-  --chart-1: #F80000;
-  --chart-2: #CC0000;
-  --chart-3: #990000;
-  --chart-4: #1A1A1A;
-  --chart-5: #666666;
+  --chart-1: #c74634;
+  --chart-2: #227e9e;
+  --chart-3: #6f6a62;
+  --chart-4: #7d7368;
+  --chart-5: #3a5f0b;
   
   /* Spacing and radius */
-  --radius: 0.5rem;
+  --radius: 0.25rem;
   
-  /* Light theme - Clean white background */
-  --background: #FFFFFF;
-  --foreground: #1A1A1A;
-  --card: #F5F5F5;
-  --card-foreground: #1A1A1A;
+  --background: #f6f5f2;
+  --foreground: #312d2a;
+  --card: #ffffff;
+  --card-foreground: #312d2a;
   --popover: #FFFFFF;
-  --popover-foreground: #1A1A1A;
-  --secondary: #F5F5F5;
-  --secondary-foreground: #333333;
-  --muted: #E8E8E8;
-  --muted-foreground: #666666;
-  --destructive: #DC2626;
+  --popover-foreground: #312d2a;
+  --secondary: #efede9;
+  --secondary-foreground: #3d3935;
+  --muted: #ece9e3;
+  --muted-foreground: #6f6a62;
+  --destructive: #d63b25;
   --destructive-foreground: #FFFFFF;
-  --border: #E0E0E0;
-  --input: #F5F5F5;
-  --ring: #F80000;
+  --border: #d9d5ce;
+  --input: #ffffff;
+  --ring: #c74634;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #1A1A1A;
-  --sidebar-accent: #F5F5F5;
-  --sidebar-accent-foreground: #F80000;
-  --sidebar-border: #E0E0E0;
-  --sidebar-ring: #F80000;
+  --sidebar-foreground: #312d2a;
+  --sidebar-accent: #f4f1ed;
+  --sidebar-accent-foreground: #c74634;
+  --sidebar-border: #d9d5ce;
+  --sidebar-ring: #c74634;
 }
 
 .dark {
@@ -127,6 +126,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 14px;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -200,5 +200,65 @@
 
   .dark .oracle-badge {
     @apply bg-red-900 text-red-100;
+  }
+
+  .apex-shell-header {
+    @apply bg-[#312d2a] text-white border-b border-[#201d1a];
+  }
+
+  .apex-toolbar {
+    @apply bg-white border-b border-border;
+  }
+
+  .apex-page-header {
+    @apply bg-white border border-border rounded shadow-sm;
+  }
+
+  .apex-region {
+    @apply bg-white border border-border rounded shadow-sm;
+  }
+
+  .apex-region-header {
+    @apply flex items-center justify-between gap-4 border-b border-border bg-[#faf9f7] px-5 py-3;
+  }
+
+  .apex-region-body {
+    @apply px-5 py-5;
+  }
+
+  .apex-region-footer {
+    @apply flex items-center justify-between gap-3 border-t border-border bg-[#faf9f7] px-5 py-3;
+  }
+
+  .apex-side-region {
+    @apply bg-white border border-border rounded shadow-sm;
+  }
+
+  .apex-step-row {
+    @apply flex items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm text-muted-foreground;
+  }
+
+  .apex-step-row-active {
+    @apply border-primary bg-[#fff7f5] text-foreground;
+  }
+
+  .apex-choice {
+    @apply flex items-start gap-3 border border-border bg-white px-4 py-3 transition-colors;
+  }
+
+  .apex-choice:hover {
+    @apply bg-[#faf9f7] border-[#bdb6ad];
+  }
+
+  .apex-choice-selected {
+    @apply border-primary bg-[#fff7f5];
+  }
+
+  .apex-badge {
+    @apply inline-flex items-center rounded border border-border bg-white px-2 py-1 text-xs font-medium text-muted-foreground;
+  }
+
+  .apex-callout {
+    @apply border-l-4 border-[#227e9e] bg-[#f3f8fa] px-4 py-3 text-sm text-[#245768];
   }
 }

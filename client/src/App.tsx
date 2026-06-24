@@ -12,9 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 
 function Router() {
-  const { user } = useAuth();
-  const adminSession = localStorage.getItem("adminSession");
-  const isAdminLoggedIn = adminSession ? JSON.parse(adminSession).loggedIn : false;
+  useAuth();
   
   // make sure to consider if you need authentication for certain routes
   return (
@@ -23,10 +21,10 @@ function Router() {
         <Switch>
           <Route path={"/admin-login"} component={AdminLogin} />
           <Route path={"/admin/dashboard"} component={() => <AdminDashboard />} />
-          <Route path={"/admin"} component={() => isAdminLoggedIn ? <AdminDashboard /> : <AdminLogin />} />
+          <Route path={"/admin"} component={() => <AdminDashboard />} />
           <Route path={"/showcase"} component={Showcase} />
           <Route path={"/assessment"} component={Home} />
-          <Route path={"/"} component={Showcase} />
+          <Route path={"/"} component={Home} />
           <Route path={"/404"} component={NotFound} />
           {/* Final fallback route */}
           <Route component={NotFound} />
