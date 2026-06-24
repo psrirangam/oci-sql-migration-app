@@ -71,7 +71,8 @@ fi
 cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
 [Unit]
 Description=OCI Windows and SQL Server Migration Assessment App
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=simple
@@ -81,6 +82,11 @@ EnvironmentFile=${ENV_FILE}
 ExecStart=${NODE_BIN} ${APP_DIR}/dist/index.js
 Restart=always
 RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=10
+TimeoutStopSec=30
+KillSignal=SIGTERM
+SyslogIdentifier=${SERVICE_NAME}
 
 [Install]
 WantedBy=multi-user.target
